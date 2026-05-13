@@ -1,0 +1,131 @@
+{
+  "version": 1,
+  "skills": {
+    "animations": {
+      "source": "phaserjs/phaser",
+      "sourceType": "github",
+      "skillPath": "skills/animations/SKILL.md",
+      "computedHash": "342f4448eed4b25a890793b7f14cad8b3393a16a915cf967edbcd6d2fd9d20d7"
+    },
+    "audio-and-sound": {
+      "source": "phaserjs/phaser",
+      "sourceType": "github",
+      "skillPath": "skills/audio-and-sound/SKILL.md",
+      "computedHash": "6b7e89b5fa68a551829949bf295246e9ea0050379ab1302b26564cd1082e369f"
+    },
+    "brainstorming": {
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "skillPath": "skills/brainstorming/SKILL.md",
+      "computedHash": "f483c304fcde060211ffae00f49bb728536e7e7613c99db45b5b924d9fc17243"
+    },
+    "caveman": {
+      "source": "juliusbrussee/caveman",
+      "sourceType": "github",
+      "skillPath": "skills/caveman/SKILL.md",
+      "computedHash": "7935e83f9c6a8b7cbb5404d144b0d19e3ba93583f4388301c3dada37cd25adf8"
+    },
+    "diagnose": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/diagnose/SKILL.md",
+      "computedHash": "1c3c85517ac42116fe5f2bfb5150f7b3e38ad23808e40b33fbb01f1afb611983"
+    },
+    "find-skills": {
+      "source": "vercel-labs/skills",
+      "sourceType": "github",
+      "skillPath": "skills/find-skills/SKILL.md",
+      "computedHash": "9e1c8b3103f92fa8092568a44fe64858de7c5c9dc65ce4bea8f168080e889cfd"
+    },
+    "frontend-design": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/frontend-design/SKILL.md",
+      "computedHash": "516bd2154eb843a8240e43d5b285229129853114ad7075a5e141e1c08e408c84"
+    },
+    "game-setup-and-config": {
+      "source": "phaserjs/phaser",
+      "sourceType": "github",
+      "skillPath": "skills/game-setup-and-config/SKILL.md",
+      "computedHash": "ff373f46eef9528843a388b8fc2083b4a7aad8f50298d753ec745423706b77a0"
+    },
+    "grill-me": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/productivity/grill-me/SKILL.md",
+      "computedHash": "daf64ca15f4fa081a6747766db538e2dbd1131725ed4fcdd3d538dc62c7035ba"
+    },
+    "grill-with-docs": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/grill-with-docs/SKILL.md",
+      "computedHash": "e95d83038cb68774469932969b060438bc457973657269a479571321c93a9140"
+    },
+    "improve-codebase-architecture": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/improve-codebase-architecture/SKILL.md",
+      "computedHash": "2da1d23b8f53cfe67f2e0b68924ab9f4ec400bb6480de097007eeaeb517d1722"
+    },
+    "input-keyboard-mouse-touch": {
+      "source": "phaserjs/phaser",
+      "sourceType": "github",
+      "skillPath": "skills/input-keyboard-mouse-touch/SKILL.md",
+      "computedHash": "ec25f47ee3cdc6a6ed0ceaa77d62fcbe30a161f73cbc2dcf3771e12c64bee791"
+    },
+    "sprites-and-images": {
+      "source": "phaserjs/phaser",
+      "sourceType": "github",
+      "skillPath": "skills/sprites-and-images/SKILL.md",
+      "computedHash": "0b481bd5b02c2e997a4207ba83046770a72db599b92c22353a9bbdbad77d1cfb"
+    },
+    "tdd": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/tdd/SKILL.md",
+      "computedHash": "78b31b2120c5fe7aced1cebfd4c7c94acb0037fd4f89c83c67584414aa4173bd"
+    },
+    "tilemaps": {
+      "source": "phaserjs/phaser",
+      "sourceType": "github",
+      "skillPath": "skills/tilemaps/SKILL.md",
+      "computedHash": "42007a40324eb14675db75b7cb9239c203c44caeefb97942ac3a6bae9fb92604"
+    },
+    "to-prd": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/to-prd/SKILL.md",
+      "computedHash": "a80acb8760af6521a37ea4f079e617712fcaa800f8a766e247f815c5dabb20d2"
+    },
+    "triage": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/triage/SKILL.md",
+      "computedHash": "56ff15b41bbebfa4cb329d96150d9b297c1d919ce30784d883b8755b4bfd8e7e"
+    },
+    "using-superpowers": {
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "skillPath": "skills/using-superpowers/SKILL.md",
+      "computedHash": "de10fd3ff46d797acc92b9df6b3ea456a5cd1d095b73c90bc921e83cce4c5bb9"
+    },
+    "v4-new-features": {
+      "source": "phaserjs/phaser",
+      "sourceType": "github",
+      "skillPath": "skills/v4-new-features/SKILL.md",
+      "computedHash": "d5f98e8121435fac205b890ef5892b74e9f77252c608c7372dd611a2bbcb5d61"
+    },
+    "write-a-skill": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/productivity/write-a-skill/SKILL.md",
+      "computedHash": "3b58a16bde08f84ed490cd449ecdc40289216d660e070c485f53bc2d1ed2b843"
+    },
+    "zoom-out": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/zoom-out/SKILL.md",
+      "computedHash": "a8b8ed45609fdfa9f184d0c9f69326e43822a42eebea14db2792d777373de562"
+    }
+  }
+}
