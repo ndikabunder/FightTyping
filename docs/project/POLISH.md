@@ -1,3 +1,24 @@
+## Update Implementasi Polish Terbaru - 2026-05-14
+
+- Intro awal, menu transition, level transition, leaderboard transition, dan result transition sudah memberi presentasi neon arcade yang lebih hidup.
+- Keyboard-only flow sudah tersedia di menu, leaderboard, dan result panel; hover/focus button juga sudah dipoles.
+- Combo feedback dibuat ulang agar reward lebih jelas: `COMBO xN` tampil di bawah objective panel, tidak flicker, dan dianimasikan manual saat combo bertambah.
+- Player skill level 3+ menambah momen power spike: progress bar dari combo 3x, panel dua kata, lalu `Skill x2`.
+- Enemy skill level 6+ menambah tekanan mid-game: cooldown lebih lambat dari attack biasa tapi lebih berbahaya, dengan warning panel `Enemy Skill`.
+- Skill input diberi guard Shift/uppercase agar polish tidak mengganggu core typing; kata normal tidak lagi memicu skill tanpa sengaja.
+- Prompt pool Inggris diperluas dan meningkat per level sehingga game terasa lebih variatif saat replay.
+
+## Update Implementasi Polish Terbaru - 2026-05-13
+
+- Main menu dipoles dengan idle fighter player/enemy, neon grid, dan tombol besar.
+- Transisi menu ke fight memakai beat pendek sekitar 720ms agar terasa arcade tapi tidak menghambat gameplay.
+- Result panel dipoles dengan action button kontekstual: Victory punya Next, Defeat tidak.
+- Debug panel HUD gameplay dihilangkan agar playfield bersih.
+- Combo badge dipindahkan ke bawah panel objective, tanpa border/background, turun agar tidak mepet panel, dan tidak flicker.
+- Combo tetap punya feedback reward dan score bonus.
+- Leaderboard localStorage menjadi loop replay polish.
+- Rekomendasi SFX: sci-fi arcade, cyber UI, typing click, energy hit, dan neon combat impact.
+
 # Fight Typing - Polish & Juice Plan
 
 ## Status Terkini - 2026-05-13

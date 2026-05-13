@@ -1,3 +1,29 @@
+## Update Implementasi Terbaru - 2026-05-14
+
+- Flow scene sekarang lengkap: `BootScene -> PreloadScene -> IntroScene -> MenuScene -> FightScene`, dengan `LeaderboardScene` dari menu.
+- Intro awal dan transisi antar menu, leaderboard, level, victory, dan defeat memakai slash/flash neon agar perpindahan scene terasa arcade.
+- Menu dan leaderboard mendukung keyboard-only shortcut: `S`/`Enter` untuk start, `L` untuk leaderboard, `B`/`Esc` untuk back, `C` untuk clear.
+- Semua button punya hover/focus state agar nyaman dipakai dengan mouse maupun keyboard.
+- Combo system dibangun ulang sebagai `ComboSystem` terpisah. Combo naik saat prompt sukses, pecah saat miss/hit tertentu, punya tier, best combo, serial event, dan feedback `COMBO xN` di bawah objective panel.
+- Level 3+ membuka player skill: panel dua kata muncul di bawah kaki player, terkunci sampai combo 3x, punya progress bar, lalu aktif sebagai `Skill x2`.
+- Skill player hanya bisa mulai diketik saat unlocked dan harus diawali dengan huruf besar/Shift agar tidak aktif tanpa sengaja ketika kata normal mengandung huruf yang sama.
+- Kata skill player dipilih dari pool Inggris secara dinamis per level, bukan selalu `power strike`.
+- Level 6+ membuka enemy skill: panel berada di bawah kaki enemy, cooldown 150% dari cooldown attack normal, damage 2x, dan UI hanya menampilkan `Enemy Skill` tanpa membocorkan jenis serangan.
+- Prompt pool diperluas menjadi `level1` sampai `level10`, semuanya bahasa Inggris, dan semakin panjang/sulit seiring naik level.
+
+## Update Implementasi Terbaru - 2026-05-13
+
+- Main menu punya `START` dan `LEADERBOARD`, dengan idle fighter player/enemy di atas glow biru/merah.
+- Transisi `START` ke gameplay memakai gaya neon arcade: slash cyan/pink, flash, dan teks `TYPE TO STRIKE`.
+- Leaderboard memakai `localStorage`, sort berdasarkan level terbanyak selesai, waktu tercepat, lalu score tertinggi.
+- Victory panel punya `NEXT`, `RETRY`, `MAIN MENU`; Defeat panel hanya `RETRY`, `MAIN MENU`.
+- Keyboard `N` hanya berlaku saat Victory.
+- Result panel menampilkan Combo, Best, Accuracy, Score, Level, dan Rank; teks rank duplikat sudah dihapus.
+- Debug panel HUD gameplay sudah dihilangkan.
+- Combo tampil di bawah panel objective sebagai `COMBO xN`, tanpa border/background, dan tidak boleh flicker.
+- Tema SFX yang direkomendasikan: `Cyber Martial Typing / Neon Impact`.
+- Dokumen project utama berada di `docs/project`; `AGENTS.md` tetap di root.
+
 # Fight Typing - Game Design Document
 
 ## Status Terkini - 2026-05-13

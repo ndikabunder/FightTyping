@@ -36,7 +36,7 @@ export class PreloadScene extends Phaser.Scene {
 
     this.time.delayedCall(120, () => {
       loading.destroy();
-      this.scene.start("MenuScene");
+      this.scene.start("IntroScene");
     });
   }
 }

@@ -138,15 +138,21 @@ body {
   box-shadow: inset 0 0 14px rgba(124, 247, 255, 0.12), 0 0 14px rgba(124, 247, 255, 0.12);
 }
 
-.level-chip {
+.level-status {
   position: absolute;
   top: 18.5%;
   left: 50%;
   display: grid;
+  justify-items: center;
+  gap: 12px;
+  transform: translateX(-50%);
+}
+
+.level-chip {
+  display: grid;
   gap: 2px;
   min-width: 250px;
   max-width: 360px;
-  transform: translateX(-50%);
   padding: 8px 13px;
   border: 2px solid rgba(255, 243, 176, 0.5);
   border-radius: 4px;
@@ -167,44 +173,45 @@ body {
   font-size: clamp(9px, 1vw, 12px);
 }
 
-.level-combo {
-  position: absolute;
-  top: calc(18.5% + 96px);
-  left: 50%;
+.combo-readout {
+  z-index: 8;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 5px;
-  min-width: 118px;
-  padding: 0;
-  transform: translate(-50%, -50%);
+  min-width: 124px;
+  min-height: 28px;
+  padding: 2px 0 0;
   color: #fff3b0;
   font-size: clamp(14px, 1.45vw, 20px);
   font-weight: 900;
+  line-height: 1;
   text-transform: uppercase;
-  text-shadow: 0 0 10px rgba(255, 243, 176, 0.62);
+  text-shadow: 0 0 10px rgba(255, 243, 176, 0.68), 0 0 24px rgba(124, 247, 255, 0.24);
+  pointer-events: none;
+  will-change: transform, opacity, filter;
 }
 
-.level-combo span {
+.combo-readout span {
   opacity: 0.92;
 }
 
-.level-combo strong {
+.combo-readout strong {
   color: #e8fbff;
-  font-size: 1.12em;
+  font-size: 1.16em;
   line-height: 1;
   text-shadow: 0 0 10px rgba(232, 251, 255, 0.78), 0 0 18px currentColor;
 }
 
-.level-combo.chain {
+.combo-readout.chain {
   color: #7cf7ff;
 }
 
-.level-combo.power {
+.combo-readout.power {
   color: #ffd166;
 }
 
-.level-combo.mega {
+.combo-readout.mega {
   color: #ff78d8;
 }
 
@@ -290,6 +297,138 @@ body {
   color: #7cf7ff;
 }
 
+.skill-panel {
+  position: absolute;
+  min-width: 230px;
+  padding: 9px 13px 11px;
+  transform: translate(-50%, -50%);
+  border: 2px solid rgba(255, 243, 176, 0.5);
+  border-radius: 6px;
+  background: linear-gradient(135deg, rgba(28, 19, 5, 0.9), rgba(7, 13, 25, 0.86));
+  text-align: center;
+  box-shadow: inset 0 0 20px rgba(255, 243, 176, 0.1), 0 0 24px rgba(255, 243, 176, 0.18), 0 10px 28px rgba(0, 0, 0, 0.42);
+  clip-path: polygon(10px 0, calc(100% - 20px) 0, 100% 17px, 100% calc(100% - 9px), calc(100% - 9px) 100%, 20px 100%, 0 calc(100% - 17px), 0 9px);
+}
+
+.skill-panel.locked {
+  border-color: rgba(124, 247, 255, 0.26);
+  filter: grayscale(0.75);
+  opacity: 0.72;
+}
+
+.skill-panel.ready,
+.skill-panel.matching {
+  border-color: rgba(255, 243, 176, 0.9);
+  animation: skill-ready-pulse 900ms ease-in-out infinite;
+}
+
+.skill-panel.wrong {
+  border-color: rgba(239, 71, 111, 0.9);
+  animation: shake 120ms linear 1;
+}
+
+.skill-charge {
+  height: 8px;
+  margin-bottom: 7px;
+  border: 1px solid rgba(255, 243, 176, 0.36);
+  background: rgba(0, 0, 0, 0.46);
+  overflow: hidden;
+}
+
+.skill-charge b {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #7cf7ff, #fff3b0, #ff78d8);
+  box-shadow: 0 0 13px rgba(255, 243, 176, 0.85);
+  transition: width 160ms ease;
+}
+
+.skill-panel small {
+  display: block;
+  margin-bottom: 4px;
+  color: #fff3b0;
+  font-size: clamp(9px, 0.95vw, 11px);
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.skill-words {
+  display: flex;
+  justify-content: center;
+  gap: 9px;
+  color: #e8fbff;
+  font-size: clamp(18px, 2vw, 27px);
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 0 12px rgba(232, 251, 255, 0.55);
+}
+
+.skill-words em {
+  display: none;
+}
+
+.skill-words .typed {
+  color: #fff3b0;
+  text-shadow: 0 0 14px rgba(255, 243, 176, 0.88);
+}
+
+.enemy-skill-panel {
+  position: absolute;
+  min-width: 220px;
+  padding: 9px 13px 11px;
+  transform: translate(-50%, -50%);
+  border: 2px solid rgba(255, 77, 141, 0.58);
+  border-radius: 6px;
+  background: linear-gradient(135deg, rgba(42, 7, 23, 0.9), rgba(7, 10, 22, 0.86));
+  text-align: center;
+  box-shadow: inset 0 0 20px rgba(255, 77, 141, 0.12), 0 0 24px rgba(255, 77, 141, 0.18), 0 10px 28px rgba(0, 0, 0, 0.42);
+  clip-path: polygon(10px 0, calc(100% - 20px) 0, 100% 17px, 100% calc(100% - 9px), calc(100% - 9px) 100%, 20px 100%, 0 calc(100% - 17px), 0 9px);
+}
+
+.enemy-skill-panel.warning,
+.enemy-skill-panel.danger {
+  animation: enemy-skill-pulse 780ms ease-in-out infinite;
+}
+
+.enemy-skill-panel.danger {
+  border-color: rgba(255, 77, 141, 0.98);
+}
+
+.enemy-skill-charge {
+  height: 8px;
+  margin-bottom: 7px;
+  border: 1px solid rgba(255, 177, 199, 0.36);
+  background: rgba(0, 0, 0, 0.48);
+  overflow: hidden;
+}
+
+.enemy-skill-charge b {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #ffd166, #ff4d8d, #e8fbff);
+  box-shadow: 0 0 13px rgba(255, 77, 141, 0.9);
+  transition: width 160ms linear;
+}
+
+.enemy-skill-panel small {
+  display: block;
+  margin-bottom: 4px;
+  color: #ffb3c4;
+  font-size: clamp(9px, 0.95vw, 11px);
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.enemy-skill-panel strong {
+  display: block;
+  color: #e8fbff;
+  font-size: clamp(16px, 1.65vw, 23px);
+  font-weight: 900;
+  line-height: 1;
+  text-transform: uppercase;
+  text-shadow: 0 0 12px rgba(255, 77, 141, 0.65);
+}
+
 .enemy-cooldown {
   position: absolute;
   width: 184px;
@@ -365,21 +504,15 @@ body {
   color: #7cf7ff;
 }
 
-.combat-feedback.combo {
-  color: #fff3b0;
-  font-size: clamp(34px, 5.4vw, 76px);
-  text-shadow: 0 0 16px rgba(255, 243, 176, 0.72), 0 0 40px rgba(255, 77, 141, 0.5);
-}
-
-.combat-feedback.comboBreak {
-  color: #ef476f;
-  font-size: clamp(28px, 4.4vw, 62px);
-  text-shadow: 0 0 16px rgba(239, 71, 111, 0.74), 0 0 30px rgba(0, 0, 0, 0.72);
-}
-
 .combat-feedback.ko {
   color: #ffd166;
   font-size: clamp(34px, 5vw, 72px);
+}
+
+.combat-feedback.skill {
+  color: #fff3b0;
+  font-size: clamp(34px, 5vw, 72px);
+  text-shadow: 0 0 18px rgba(255, 243, 176, 0.78), 0 0 42px rgba(255, 77, 141, 0.42);
 }
 
 .debug-panel {
@@ -408,9 +541,42 @@ body {
   place-items: center;
   background: rgba(4, 4, 8, 0.58);
   text-align: center;
+  overflow: hidden;
+  animation: result-backdrop-in 360ms ease-out both;
+}
+
+.result-overlay::before,
+.result-overlay::after {
+  position: absolute;
+  inset: -18%;
+  content: "";
+  pointer-events: none;
+}
+
+.result-overlay::before {
+  background: linear-gradient(105deg, transparent 18%, rgba(124, 247, 255, 0.2) 42%, rgba(255, 243, 176, 0.2) 50%, rgba(255, 77, 141, 0.16) 58%, transparent 82%);
+  transform: translateX(-72%) skewX(-12deg);
+  animation: result-scan-in 680ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.result-overlay::after {
+  opacity: 0.5;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 243, 176, 0.2), transparent 32%);
+  transform: scale(0.72);
+  animation: result-aura-pop 560ms ease-out both;
+}
+
+.result-overlay.defeat::before {
+  background: linear-gradient(105deg, transparent 18%, rgba(255, 77, 141, 0.22) 42%, rgba(239, 71, 111, 0.24) 50%, rgba(124, 247, 255, 0.1) 58%, transparent 82%);
+}
+
+.result-overlay.paused {
+  animation: none;
 }
 
 .result-card {
+  position: relative;
+  z-index: 1;
   display: grid;
   gap: 16px;
   min-width: min(640px, 82vw);
@@ -419,6 +585,16 @@ body {
   border-radius: 6px;
   background: linear-gradient(135deg, rgba(7, 18, 29, 0.9), rgba(20, 9, 28, 0.88));
   box-shadow: inset 0 0 28px rgba(255, 243, 176, 0.1), 0 0 52px rgba(124, 247, 255, 0.16);
+  animation: result-card-in 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.result-overlay.defeat .result-card {
+  border-color: rgba(239, 71, 111, 0.5);
+  animation-name: result-card-in, result-defeat-jolt;
+  animation-duration: 520ms, 180ms;
+  animation-delay: 0ms, 140ms;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1), linear;
+  animation-fill-mode: both;
 }
 
 .result-overlay h1 {
@@ -485,6 +661,26 @@ body {
 .result-actions button:hover {
   border-color: rgba(255, 243, 176, 0.9);
   color: #fff3b0;
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: inset 0 0 18px rgba(255, 243, 176, 0.14), 0 0 24px rgba(255, 243, 176, 0.2);
+}
+
+.result-actions button:focus-visible {
+  outline: 2px solid rgba(255, 243, 176, 0.9);
+  outline-offset: 3px;
+  color: #fff3b0;
+}
+
+.result-actions button small {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  margin-left: 6px;
+  padding: 2px 5px;
+  border: 1px solid rgba(124, 247, 255, 0.45);
+  border-radius: 3px;
+  color: #7cf7ff;
+  font-size: 10px;
 }
 
 #portrait-warning {
@@ -528,6 +724,26 @@ body {
   }
 }
 
+@keyframes skill-ready-pulse {
+  0%,
+  100% {
+    box-shadow: inset 0 0 20px rgba(255, 243, 176, 0.1), 0 0 24px rgba(255, 243, 176, 0.18), 0 10px 28px rgba(0, 0, 0, 0.42);
+  }
+  50% {
+    box-shadow: inset 0 0 24px rgba(255, 243, 176, 0.22), 0 0 38px rgba(255, 243, 176, 0.36), 0 10px 28px rgba(0, 0, 0, 0.42);
+  }
+}
+
+@keyframes enemy-skill-pulse {
+  0%,
+  100% {
+    box-shadow: inset 0 0 20px rgba(255, 77, 141, 0.12), 0 0 24px rgba(255, 77, 141, 0.18), 0 10px 28px rgba(0, 0, 0, 0.42);
+  }
+  50% {
+    box-shadow: inset 0 0 24px rgba(255, 77, 141, 0.24), 0 0 40px rgba(255, 77, 141, 0.42), 0 10px 28px rgba(0, 0, 0, 0.42);
+  }
+}
+
 @keyframes feedback-pop {
   0% {
     opacity: 0;
@@ -543,19 +759,76 @@ body {
   }
 }
 
-@keyframes combo-pulse {
+@keyframes result-backdrop-in {
   0% {
-    transform: scale(1);
-  }
-  45% {
-    transform: scale(1.14);
+    opacity: 0;
+    backdrop-filter: blur(0);
   }
   100% {
+    opacity: 1;
+    backdrop-filter: blur(2px);
+  }
+}
+
+@keyframes result-scan-in {
+  0% {
+    opacity: 0;
+    transform: translateX(-72%) skewX(-12deg);
+  }
+  32% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(72%) skewX(-12deg);
+  }
+}
+
+@keyframes result-aura-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.72);
+  }
+  42% {
+    opacity: 0.55;
+    transform: scale(1.04);
+  }
+  100% {
+    opacity: 0.24;
     transform: scale(1);
   }
 }
 
+@keyframes result-card-in {
+  0% {
+    opacity: 0;
+    transform: translateY(34px) scale(0.86);
+    filter: brightness(1.8);
+  }
+  64% {
+    opacity: 1;
+    transform: translateY(-4px) scale(1.03);
+    filter: brightness(1.18);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: brightness(1);
+  }
+}
 
+@keyframes result-defeat-jolt {
+  0%,
+  100% {
+    margin-left: 0;
+  }
+  30% {
+    margin-left: -8px;
+  }
+  65% {
+    margin-left: 8px;
+  }
+}
 
 @media (orientation: portrait) and (max-width: 800px) {
   #portrait-warning {

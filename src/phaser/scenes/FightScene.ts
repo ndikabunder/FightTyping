@@ -4,6 +4,7 @@ import { GAME_HEIGHT, GAME_WIDTH, GROUND_Y } from "../config";
 import { DebugRenderer } from "../view/DebugRenderer";
 import { FighterRenderer } from "../view/FighterRenderer";
 import { HudController } from "../../ui/hud/HudController";
+import { playSlashTransition } from "../fx/SceneTransitions";
 import { saveLeaderboardEntry } from "../../game/systems/LeaderboardStore";
 import type { GameSnapshot, HitEvent } from "../../game/types";
 
@@ -23,12 +24,15 @@ export class FightScene extends Phaser.Scene {
   private runStartedAtMs = 0;
   private bestCompletedLevel = 0;
   private lastSavedRoundState: GameSnapshot["roundState"] | null = null;
+  private transitioning = false;
 
   constructor() {
     super("FightScene");
   }
 
   create() {
+    this.transitioning = false;
+    this.input.enabled = true;
     this.simulation = new FightSimulation();
     this.arena = this.add.graphics().setDepth(-10);
 
@@ -72,21 +76,49 @@ export class FightScene extends Phaser.Scene {
   }
 
   private handleHudCommand(command: "retry" | "next" | "menu") {
-    if (command === "menu") {
-      this.scene.start("MenuScene");
+    if (this.transitioning) {
       return;
     }
 
-    if (command === "next") {
-      this.simulation.nextLevel();
-    } else {
-      this.simulation.restart();
+    if (command === "menu") {
+      this.transitioning = true;
+      this.input.enabled = false;
+      playSlashTransition(this, {
+        label: "MAIN MENU",
+        accent: 0x7cf7ff,
+        onCovered: () => this.scene.start("MenuScene")
+      });
+      return;
     }
 
-    this.runStartedAtMs = this.time.now;
-    this.lastSavedRoundState = null;
-    this.lastHudHash = "";
-    this.renderAll(this.simulation.getSnapshot());
+    this.transitionLevel(command);
+  }
+
+  private transitionLevel(command: "retry" | "next") {
+    this.transitioning = true;
+    this.input.enabled = false;
+    const label = command === "next" ? "NEXT LEVEL" : "RETRY";
+
+    playSlashTransition(this, {
+      label,
+      accent: command === "next" ? 0xfff3b0 : 0x7cf7ff,
+      onCovered: () => {
+        if (command === "next") {
+          this.simulation.nextLevel();
+        } else {
+          this.simulation.restart();
+        }
+
+        this.runStartedAtMs = this.time.now;
+        this.lastSavedRoundState = null;
+        this.lastHudHash = "";
+        this.lastPlayerVisualSerial = 0;
+        this.lastEnemyVisualSerial = 0;
+        this.input.enabled = true;
+        this.transitioning = false;
+        this.renderAll(this.simulation.getSnapshot());
+      }
+    });
   }
 
   private renderAll(snapshot: GameSnapshot) {
@@ -101,6 +133,9 @@ export class FightScene extends Phaser.Scene {
     const hudHash = JSON.stringify({
       prompts: snapshot.prompts,
       metrics: snapshot.metrics,
+      combo: snapshot.combo,
+      skill: snapshot.skill,
+      enemySkill: snapshot.enemySkill,
       hp: [snapshot.player.hp, snapshot.enemy.hp],
       state: snapshot.roundState,
       countdown: Math.ceil(snapshot.countdownMs / 200),
@@ -110,7 +145,6 @@ export class FightScene extends Phaser.Scene {
       debug: snapshot.debugEnabled,
       level: snapshot.level,
       feedback: snapshot.feedback,
-      comboPopAt: snapshot.metrics.comboJustChangedAtMs,
       playerState: snapshot.player.state,
       enemyState: snapshot.enemy.state,
       lastHit: snapshot.lastHit?.atMs
@@ -231,6 +265,9 @@ export class FightScene extends Phaser.Scene {
         break;
       case "dodge":
         this.beep(760, 0.07, 0.04);
+        break;
+      case "skill":
+        this.beep(880, 0.1, 0.05);
         break;
       case "hit":
       case "ko":

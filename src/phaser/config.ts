@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { BootScene } from "./scenes/BootScene";
 import { PreloadScene } from "./scenes/PreloadScene";
 import { FightScene } from "./scenes/FightScene";
+import { IntroScene } from "./scenes/IntroScene";
 import { MenuScene } from "./scenes/MenuScene";
 import { LeaderboardScene } from "./scenes/LeaderboardScene";
 
@@ -34,5 +35,5 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
     activePointers: 1,
     windowEvents: true
   },
-  scene: [BootScene, PreloadScene, MenuScene, LeaderboardScene, FightScene]
+  scene: [BootScene, PreloadScene, IntroScene, MenuScene, LeaderboardScene, FightScene]
 };

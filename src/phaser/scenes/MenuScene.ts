@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { playSlashTransition } from "../fx/SceneTransitions";
 import { GAME_HEIGHT, GAME_WIDTH } from "../config";
 
 export class MenuScene extends Phaser.Scene {
@@ -9,6 +10,8 @@ export class MenuScene extends Phaser.Scene {
   }
 
   create() {
+    this.transitioning = false;
+    this.input.enabled = true;
     this.createBackground();
     this.createIdleFighters();
 
@@ -33,7 +36,11 @@ export class MenuScene extends Phaser.Scene {
       .setShadow(0, 0, "#7cf7ff", 10, true, true);
 
     this.menuButton(GAME_WIDTH / 2, 330, "START", () => this.startGameTransition());
-    this.menuButton(GAME_WIDTH / 2, 414, "LEADERBOARD", () => this.scene.start("LeaderboardScene"));
+    this.menuButton(GAME_WIDTH / 2, 414, "LEADERBOARD", () => this.startLeaderboardTransition());
+    this.input.keyboard?.on("keydown-S", this.startGameTransition, this);
+    this.input.keyboard?.on("keydown-ENTER", this.startGameTransition, this);
+    this.input.keyboard?.on("keydown-L", this.startLeaderboardTransition, this);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.shutdown, this);
 
     this.add
       .text(GAME_WIDTH / 2, 598, "Keyboard duel prototype - Phaser 4", {
@@ -48,16 +55,24 @@ export class MenuScene extends Phaser.Scene {
     const container = this.add.container(x, y);
     const bg = this.add.graphics();
     const text = this.add
-      .text(0, 0, label, {
+      .text(0, -3, label, {
         color: "#e8fbff",
         fontFamily: "Trebuchet MS, Arial",
         fontSize: "30px",
         fontStyle: "900"
       })
       .setOrigin(0.5);
+    const shortcut = this.add
+      .text(0, 20, shortcutFor(label), {
+        color: "rgba(124, 247, 255, 0.74)",
+        fontFamily: "Trebuchet MS, Arial",
+        fontSize: "11px",
+        fontStyle: "900"
+      })
+      .setOrigin(0.5);
 
     drawButton(bg, 300, 58, 0x7cf7ff, 0.72);
-    container.add([bg, text]);
+    container.add([bg, text, shortcut]);
     container.setSize(300, 58);
     container.setInteractive({ useHandCursor: true });
     container.on("pointerover", () => {
@@ -67,6 +82,7 @@ export class MenuScene extends Phaser.Scene {
       bg.clear();
       drawButton(bg, 316, 62, 0xffd166, 0.9);
       text.setColor("#fff3b0");
+      shortcut.setColor("#fff3b0");
     });
     container.on("pointerout", () => {
       if (this.transitioning) {
@@ -75,6 +91,7 @@ export class MenuScene extends Phaser.Scene {
       bg.clear();
       drawButton(bg, 300, 58, 0x7cf7ff, 0.72);
       text.setColor("#e8fbff");
+      shortcut.setColor("rgba(124, 247, 255, 0.74)");
     });
     container.on("pointerdown", () => {
       if (!this.transitioning) {
@@ -92,52 +109,26 @@ export class MenuScene extends Phaser.Scene {
     this.transitioning = true;
     this.input.enabled = false;
 
-    const flash = this.add.graphics().setDepth(90);
-    const leftSlash = this.add.rectangle(-GAME_WIDTH * 0.38, GAME_HEIGHT / 2, GAME_WIDTH * 0.72, GAME_HEIGHT * 1.5, 0x7cf7ff, 0.88).setDepth(91);
-    const rightSlash = this.add.rectangle(GAME_WIDTH * 1.38, GAME_HEIGHT / 2, GAME_WIDTH * 0.72, GAME_HEIGHT * 1.5, 0xff4d8d, 0.82).setDepth(92);
-    const ready = this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT / 2, "TYPE TO STRIKE", {
-        color: "#fff3b0",
-        fontFamily: "Trebuchet MS, Arial",
-        fontSize: "48px",
-        fontStyle: "900"
-      })
-      .setOrigin(0.5)
-      .setAlpha(0)
-      .setDepth(94)
-      .setShadow(0, 0, "#ff4d8d", 18, true, true);
-
-    leftSlash.setAngle(-12);
-    rightSlash.setAngle(-12);
-    flash.fillStyle(0x030711, 0);
-    flash.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-
-    this.cameras.main.shake(120, 0.003);
-    this.tweens.add({ targets: this.children.list.filter((child) => child !== flash && child !== leftSlash && child !== rightSlash && child !== ready), alpha: 0.26, duration: 180, ease: "Cubic.easeOut" });
-    this.tweens.add({ targets: leftSlash, x: GAME_WIDTH / 2 - 170, duration: 260, ease: "Cubic.easeOut" });
-    this.tweens.add({ targets: rightSlash, x: GAME_WIDTH / 2 + 170, duration: 260, ease: "Cubic.easeOut" });
-    this.tweens.add({
-      targets: ready,
-      alpha: 1,
-      scale: { from: 0.72, to: 1 },
-      duration: 240,
-      ease: "Back.easeOut",
-      delay: 130
+    this.tweens.add({ targets: this.children.list, alpha: 0.26, duration: 180, ease: "Cubic.easeOut" });
+    playSlashTransition(this, {
+      label: "TYPE TO STRIKE",
+      onCovered: () => this.scene.start("FightScene")
     });
+  }
 
-    this.time.delayedCall(420, () => {
-      flash.clear();
-      flash.fillStyle(0xe8fbff, 0.88);
-      flash.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-      this.cameras.main.flash(180, 232, 251, 255);
+  private startLeaderboardTransition() {
+    if (this.transitioning) {
+      return;
+    }
+
+    this.transitioning = true;
+    this.input.enabled = false;
+    this.tweens.add({ targets: this.children.list, alpha: 0.34, duration: 180, ease: "Cubic.easeOut" });
+    playSlashTransition(this, {
+      label: "LEADERBOARD",
+      accent: 0x7cf7ff,
+      onCovered: () => this.scene.start("LeaderboardScene")
     });
-
-    this.time.delayedCall(560, () => {
-      this.tweens.add({ targets: [leftSlash, rightSlash, ready], alpha: 0, duration: 130, ease: "Cubic.easeIn" });
-      this.tweens.add({ targets: flash, alpha: 0, duration: 130, ease: "Cubic.easeIn" });
-    });
-
-    this.time.delayedCall(720, () => this.scene.start("FightScene"));
   }
 
   private createBackground() {
@@ -193,6 +184,16 @@ export class MenuScene extends Phaser.Scene {
       }
     });
   }
+
+  private shutdown() {
+    this.input.keyboard?.off("keydown-S", this.startGameTransition, this);
+    this.input.keyboard?.off("keydown-ENTER", this.startGameTransition, this);
+    this.input.keyboard?.off("keydown-L", this.startLeaderboardTransition, this);
+  }
+}
+
+function shortcutFor(label: string) {
+  return label === "START" ? "S / ENTER" : "L";
 }
 
 function drawButton(graphics: Phaser.GameObjects.Graphics, width: number, height: number, color: number, alpha: number) {

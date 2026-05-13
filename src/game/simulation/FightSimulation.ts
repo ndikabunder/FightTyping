@@ -1,9 +1,11 @@
 import { CombatSystem } from "../systems/CombatSystem";
+import { ComboSystem, createComboState } from "../systems/ComboSystem";
 import { enemyArchetypes, getLevel, levels } from "../content/levels";
 import { PromptSystem } from "../systems/PromptSystem";
+import { createSkillState, SkillSystem } from "../systems/SkillSystem";
 import { createTypingMetrics, TypingSystem } from "../systems/TypingSystem";
 import { createFighter } from "./createFighter";
-import type { ActionId, CombatFeedback, GameSnapshot, HitEvent, LevelRuntimeState } from "../types";
+import type { ActionId, CombatFeedback, EnemySkillState, GameSnapshot, HitEvent, LevelRuntimeState } from "../types";
 
 export class FightSimulation {
   private static readonly PLAYER_HOME_X = 430;
@@ -14,9 +16,15 @@ export class FightSimulation {
   private readonly promptSystem = new PromptSystem();
   private readonly typingSystem = new TypingSystem();
   private readonly combatSystem = new CombatSystem();
+  private readonly comboSystem = new ComboSystem();
+  private readonly skillSystem = new SkillSystem();
   private snapshot: GameSnapshot;
+  private playerDamageMultiplier = 1;
+  private enemySkillDamageMultiplier = 1;
   private enemyAttackClockMs = 0;
+  private enemySkillClockMs = 0;
   private enemyAttackIndex = 0;
+  private enemySkillIndex = 0;
   private hitStopMs = 0;
   private levelIndex = 0;
 
@@ -30,8 +38,12 @@ export class FightSimulation {
 
   restart() {
     this.typingSystem.reset();
+    this.playerDamageMultiplier = 1;
+    this.enemySkillDamageMultiplier = 1;
     this.enemyAttackClockMs = 0;
+    this.enemySkillClockMs = 0;
     this.enemyAttackIndex = 0;
+    this.enemySkillIndex = 0;
     this.hitStopMs = 0;
     this.snapshot = this.createInitialSnapshot();
   }
@@ -92,6 +104,33 @@ export class FightSimulation {
       return null;
     }
 
+    const skillResult = this.skillSystem.handleKey(this.snapshot.skill, key, isSkillKey(key));
+    if (skillResult.consumed) {
+      this.snapshot = {
+        ...this.snapshot,
+        skill: skillResult.skill,
+        player: skillResult.completed
+          ? this.startSkillAttack()
+          : { ...this.snapshot.player, state: this.snapshot.player.state === "idle" ? "typing" : this.snapshot.player.state },
+        lastHit: null,
+        feedback: skillResult.completed
+          ? { kind: "skill", label: "Skill x2", atMs: nowMs }
+          : skillResult.wrong
+          ? { kind: "wrong", label: "Skill Miss", atMs: nowMs }
+          : { kind: "correct", label: "Charge", atMs: nowMs }
+      };
+
+      if (skillResult.completed) {
+        this.snapshot = {
+          ...this.snapshot,
+          skill: this.skillSystem.consume(this.snapshot.skill, this.snapshot.combo.count)
+        };
+        this.playerDamageMultiplier = 2;
+      }
+
+      return null;
+    }
+
     const allPrompts = this.snapshot.dodgePrompt
       ? [...this.snapshot.prompts, this.snapshot.dodgePrompt]
       : this.snapshot.prompts;
@@ -100,12 +139,20 @@ export class FightSimulation {
     const dodgePrompt = result.prompts.find((prompt) => prompt.kind === "dodge") ?? null;
     const completedDodge = result.completedPrompt?.kind === "dodge";
     const completedAttack = result.completedPrompt?.kind === "attack";
+    const combo = result.completedPrompt
+      ? this.comboSystem.gain(this.snapshot.combo, nowMs)
+      : result.wrong
+      ? this.comboSystem.break(this.snapshot.combo, nowMs)
+      : this.snapshot.combo;
+    const skill = this.skillSystem.syncWithCombo(this.snapshot.skill, combo.count);
     const feedback = this.createTypingFeedback(result.wrong, completedDodge, completedAttack, nowMs);
     this.snapshot = {
       ...this.snapshot,
       prompts,
       dodgePrompt,
       metrics: completedDodge ? { ...result.metrics, dodgeSuccesses: result.metrics.dodgeSuccesses + 1 } : result.metrics,
+      combo,
+      skill,
       player: completedDodge
         ? this.performDodge()
         : result.completedPrompt
@@ -155,7 +202,7 @@ export class FightSimulation {
       return null;
     }
 
-    const enemyStartedAttack = this.updateEnemyPressure(deltaMs);
+    const enemyStartedAttack = this.updateEnemyPressure(deltaMs, nowMs);
 
     let player = this.combatSystem.updateFighter(this.snapshot.player, deltaMs);
     player = this.resolveAttackDash(player, this.snapshot.enemy.position.x);
@@ -163,15 +210,25 @@ export class FightSimulation {
     let enemy = this.combatSystem.updateFighter(this.snapshot.enemy, enemyStartedAttack ? 0 : deltaMs);
     enemy = this.resolveAttackDash(enemy, player.position.x);
 
-    const playerHit = this.combatSystem.resolveHit(player, enemy, nowMs);
+    const playerHit = this.combatSystem.resolveHit(player, enemy, nowMs, this.playerDamageMultiplier);
     player = playerHit.attacker;
     enemy = playerHit.defender;
 
-    const enemyHit = this.combatSystem.resolveHit(enemy, player, nowMs, this.currentArchetype().damageMultiplier);
+    if (playerHit.hit) {
+      this.playerDamageMultiplier = 1;
+    }
+
+    const enemyHit = this.combatSystem.resolveHit(enemy, player, nowMs, this.currentArchetype().damageMultiplier * this.enemySkillDamageMultiplier);
     enemy = enemyHit.attacker;
     player = enemyHit.defender;
 
     const hit = playerHit.hit ?? enemyHit.hit;
+    if (!player.activeAttackId && this.playerDamageMultiplier > 1) {
+      this.playerDamageMultiplier = 1;
+    }
+    if (enemyHit.hit || (!enemy.activeAttackId && this.enemySkillDamageMultiplier > 1)) {
+      this.enemySkillDamageMultiplier = 1;
+    }
     const roundState = enemy.hp <= 0 ? "won" : player.hp <= 0 ? "lost" : this.snapshot.roundState;
 
     if (hit) {
@@ -179,7 +236,7 @@ export class FightSimulation {
     }
 
     const metrics = this.updateMetricsForHit(this.snapshot.metrics, hit);
-    const level = this.updateLevelRuntime(this.snapshot.level, metrics, player, enemy, roundState, nowMs);
+    const level = this.updateLevelRuntime(this.snapshot.level, metrics, this.snapshot.combo, player, enemy, roundState, nowMs);
 
     this.snapshot = {
       ...this.snapshot,
@@ -195,9 +252,11 @@ export class FightSimulation {
     return hit;
   }
 
-  private updateEnemyPressure(deltaMs: number) {
+  private updateEnemyPressure(deltaMs: number, nowMs: number) {
+    const enemySkill = this.updateEnemySkillClock(deltaMs);
+
     if (this.snapshot.enemy.state !== "idle") {
-      this.snapshot = { ...this.snapshot, enemyTelegraphMs: 0 };
+      this.snapshot = { ...this.snapshot, enemyTelegraphMs: 0, enemySkill };
       return false;
     }
 
@@ -205,6 +264,28 @@ export class FightSimulation {
     const enemyCooldownMs = this.currentEnemyCooldownMs();
     const telegraphStartMs = Math.max(0, enemyCooldownMs - this.currentLevel().enemyTelegraphMs);
     const enemyTelegraphMs = this.enemyAttackClockMs > telegraphStartMs ? this.enemyAttackClockMs - telegraphStartMs : 0;
+
+    if (enemySkill.available && this.enemySkillClockMs >= enemySkill.cooldownMs) {
+      const enemyAttack = this.nextEnemySkillAttack();
+      this.enemySkillClockMs = 0;
+      this.enemySkillDamageMultiplier = 2;
+      this.snapshot = {
+        ...this.snapshot,
+        enemy: this.startAttackWithDash(this.snapshot.enemy, this.snapshot.player.position.x, enemyAttack),
+        enemyTelegraphMs: 0,
+        enemyAttackClockMs: this.enemyAttackClockMs,
+        enemyIncomingAttackId: null,
+        enemySkill: {
+          ...enemySkill,
+          clockMs: 0,
+          incomingAttackId: null,
+          active: true,
+          usedSerial: enemySkill.usedSerial + 1
+        },
+        feedback: { kind: "skill", label: "Enemy Skill", atMs: nowMs }
+      };
+      return true;
+    }
 
     if (this.enemyAttackClockMs >= enemyCooldownMs) {
       const enemyAttack = this.nextEnemyAttack();
@@ -214,7 +295,8 @@ export class FightSimulation {
         enemy: this.startAttackWithDash(this.snapshot.enemy, this.snapshot.player.position.x, enemyAttack),
         enemyTelegraphMs: 0,
         enemyAttackClockMs: 0,
-        enemyIncomingAttackId: null
+        enemyIncomingAttackId: null,
+        enemySkill
       };
       return true;
     }
@@ -224,9 +306,44 @@ export class FightSimulation {
       enemyTelegraphMs,
       enemyAttackClockMs: this.enemyAttackClockMs,
       enemyAttackEveryMs: enemyCooldownMs,
-      enemyIncomingAttackId: enemyTelegraphMs > 0 ? this.peekEnemyAttack() : null
+      enemyIncomingAttackId: enemyTelegraphMs > 0 ? this.peekEnemyAttack() : null,
+      enemySkill
     };
     return false;
+  }
+
+  private updateEnemySkillClock(deltaMs: number): EnemySkillState {
+    const level = this.currentLevel();
+    const available = level.id >= 6;
+    const cooldownMs = Math.round(this.currentEnemyCooldownMs() * 1.5);
+    const telegraphWindowMs = Math.round(level.enemyTelegraphMs * 1.25);
+
+    if (!available) {
+      this.enemySkillClockMs = 0;
+      return {
+        available: false,
+        clockMs: 0,
+        cooldownMs,
+        telegraphMs: 0,
+        incomingAttackId: null,
+        active: false,
+        usedSerial: this.snapshot.enemySkill.usedSerial
+      };
+    }
+
+    this.enemySkillClockMs = Math.min(cooldownMs, this.enemySkillClockMs + deltaMs);
+    const telegraphStartMs = Math.max(0, cooldownMs - telegraphWindowMs);
+    const telegraphMs = this.enemySkillClockMs > telegraphStartMs ? this.enemySkillClockMs - telegraphStartMs : 0;
+
+    return {
+      ...this.snapshot.enemySkill,
+      available,
+      clockMs: this.enemySkillClockMs,
+      cooldownMs,
+      telegraphMs,
+      incomingAttackId: telegraphMs > 0 ? this.peekEnemySkillAttack() : null,
+      active: false
+    };
   }
 
   private performDodge() {
@@ -256,6 +373,9 @@ export class FightSimulation {
       prompts: [],
       dodgePrompt: this.promptSystem.createDodgePrompt(),
       metrics: createTypingMetrics(),
+      combo: createComboState(),
+      skill: createSkillState(level.id),
+      enemySkill: this.createEnemySkillState(level.id),
       roundState: "countdown",
       countdownMs: 1800,
       enemyTelegraphMs: 0,
@@ -304,6 +424,21 @@ export class FightSimulation {
     };
   }
 
+  private startSkillAttack() {
+    return this.startAttackWithDash(
+      {
+        ...this.snapshot.player,
+        state: "idle",
+        stateElapsedMs: 0,
+        activeAttackId: null,
+        hasHitThisAttack: false,
+        velocity: { x: 0, y: 0 }
+      },
+      this.snapshot.enemy.position.x,
+      "attack.kick.right"
+    );
+  }
+
   private nextEnemyAttack() {
     const attacks = this.currentArchetype().attacks;
     const attack = attacks[this.enemyAttackIndex % attacks.length];
@@ -311,9 +446,36 @@ export class FightSimulation {
     return attack;
   }
 
+  private nextEnemySkillAttack() {
+    const attacks = this.currentArchetype().attacks;
+    const attack = attacks[(this.enemySkillIndex + 2) % attacks.length];
+    this.enemySkillIndex += 1;
+    return attack;
+  }
+
   private peekEnemyAttack() {
     const attacks = this.currentArchetype().attacks;
     return attacks[this.enemyAttackIndex % attacks.length];
+  }
+
+  private peekEnemySkillAttack() {
+    const attacks = this.currentArchetype().attacks;
+    return attacks[(this.enemySkillIndex + 2) % attacks.length];
+  }
+
+  private createEnemySkillState(levelId: number): EnemySkillState {
+    const level = getLevel(levelId - 1);
+    const cooldownMs = Math.round(level.enemyCooldownMs * 1.5);
+
+    return {
+      available: level.id >= 6,
+      clockMs: 0,
+      cooldownMs,
+      telegraphMs: 0,
+      incomingAttackId: null,
+      active: false,
+      usedSerial: 0
+    };
   }
 
   private currentLevel() {
@@ -334,7 +496,7 @@ export class FightSimulation {
     const total = metrics.correctChars + metrics.wrongChars;
     const accuracy = total === 0 ? 100 : (metrics.correctChars / total) * 100;
     const struggling = accuracy < 75 || metrics.damageTaken >= 30;
-    const dominant = accuracy >= 95 && metrics.combo >= 12;
+    const dominant = accuracy >= 95 && this.snapshot.combo.count >= 12;
 
     if (struggling) {
       return base + 300;
@@ -366,17 +528,13 @@ export class FightSimulation {
 
   private createTypingFeedback(wrong: boolean, completedDodge: boolean, completedAttack: boolean, nowMs: number): CombatFeedback {
     if (wrong) {
-      return this.snapshot.metrics.combo > 0
-        ? { kind: "comboBreak", label: "Combo Break", atMs: nowMs }
-        : { kind: "wrong", label: "Miss", atMs: nowMs };
+      return { kind: "wrong", label: "Miss", atMs: nowMs };
     }
     if (completedDodge) {
-      const nextCombo = this.snapshot.metrics.combo + 1;
-      return { kind: nextCombo >= 2 ? "combo" : "dodge", label: nextCombo >= 2 ? comboLabel(nextCombo) : "Evade", atMs: nowMs };
+      return { kind: "dodge", label: "Evade", atMs: nowMs };
     }
     if (completedAttack) {
-      const nextCombo = this.snapshot.metrics.combo + 1;
-      return { kind: nextCombo >= 2 ? "combo" : "complete", label: nextCombo >= 2 ? comboLabel(nextCombo) : "Strike", atMs: nowMs };
+      return { kind: "complete", label: "Strike", atMs: nowMs };
     }
     return { kind: "correct", label: "Clean", atMs: nowMs };
   }
@@ -404,9 +562,9 @@ export class FightSimulation {
       : metrics;
   }
 
-  private updateLevelRuntime(level: LevelRuntimeState, metrics: GameSnapshot["metrics"], player: GameSnapshot["player"], enemy: GameSnapshot["enemy"], roundState: GameSnapshot["roundState"], nowMs: number): LevelRuntimeState {
-    const comboBonus = metrics.completedPrompts * Math.min(260, metrics.bestCombo * 12);
-    const baseScore = metrics.completedPrompts * 125 + metrics.combo * 18 + metrics.bestCombo * 35 + comboBonus + metrics.dodgeSuccesses * 90;
+  private updateLevelRuntime(level: LevelRuntimeState, metrics: GameSnapshot["metrics"], combo: GameSnapshot["combo"], player: GameSnapshot["player"], enemy: GameSnapshot["enemy"], roundState: GameSnapshot["roundState"], nowMs: number): LevelRuntimeState {
+    const comboBonus = metrics.completedPrompts * Math.min(260, combo.best * 12);
+    const baseScore = metrics.completedPrompts * 125 + combo.count * 18 + combo.best * 35 + comboBonus + metrics.dodgeSuccesses * 90;
     const damagePenalty = metrics.damageTaken * 9;
     const clearBonus = roundState === "won" ? Math.max(0, 9000 - Math.floor(nowMs / 10)) : 0;
     const score = Math.max(0, baseScore + clearBonus - damagePenalty);
@@ -461,6 +619,10 @@ export class FightSimulation {
   }
 }
 
+function isSkillKey(key: string) {
+  return key.length === 1 && key !== key.toLowerCase();
+}
+
 function cloneSnapshot(snapshot: GameSnapshot): GameSnapshot {
   return {
     ...snapshot,
@@ -469,6 +631,9 @@ function cloneSnapshot(snapshot: GameSnapshot): GameSnapshot {
     prompts: snapshot.prompts.map((prompt) => ({ ...prompt })),
     dodgePrompt: snapshot.dodgePrompt ? { ...snapshot.dodgePrompt } : null,
     metrics: { ...snapshot.metrics },
+    combo: { ...snapshot.combo },
+    skill: { ...snapshot.skill, words: [...snapshot.skill.words] as [string, string] },
+    enemySkill: { ...snapshot.enemySkill },
     lastHit: snapshot.lastHit ? { ...snapshot.lastHit, impact: { ...snapshot.lastHit.impact } } : null,
     level: { ...snapshot.level },
     feedback: snapshot.feedback ? { ...snapshot.feedback } : null
@@ -499,19 +664,6 @@ function bossPhaseFor(enemyHpPct: number) {
     return 2;
   }
   return 1;
-}
-
-function comboLabel(combo: number) {
-  if (combo > 0 && combo % 10 === 0) {
-    return `MEGA COMBO x${combo}`;
-  }
-  if (combo > 0 && combo % 5 === 0) {
-    return `POWER COMBO x${combo}`;
-  }
-  if (combo > 0 && combo % 3 === 0) {
-    return `COMBO x${combo}`;
-  }
-  return `Combo x${combo}`;
 }
 
 function lerp(from: number, to: number, progress: number) {

@@ -1,3 +1,35 @@
+## Update Implementasi Terbaru - 2026-05-14
+
+- [x] Tambah `IntroScene` sebelum `MenuScene`.
+- [x] Tambah transisi neon untuk masuk gameplay, ganti level, buka leaderboard, dan muncul result panel.
+- [x] Tambah keyboard shortcut untuk menu, leaderboard, dan result panel.
+- [x] Tambah hover/focus state pada button.
+- [x] Rebuild combo ke `ComboSystem` terpisah dengan count, best, tier, event serial, dan score feedback.
+- [x] Buat ulang UI combo `COMBO xN` di bawah objective panel dengan animasi manual agar tidak flicker.
+- [x] Tambah player skill level 3+: unlock dari combo 3x, progress bar, panel dua kata, damage 2x.
+- [x] Cegah skill aktif tidak sengaja dari input prompt biasa; skill hanya mulai saat unlocked dan input pertama memakai Shift/huruf besar.
+- [x] Randomisasi dua kata skill player dari pool Inggris.
+- [x] Tambah enemy skill level 6+: cooldown 150% attack normal, damage 2x, panel di bawah kaki enemy.
+- [x] Sembunyikan jenis serangan enemy skill dari UI; panel hanya menampilkan `Enemy Skill`.
+- [x] Perluas prompt pool menjadi `level1` sampai `level10`, semua bahasa Inggris, dan semakin sulit per level.
+- [x] Tambah test untuk `ComboSystem`, `SkillSystem`, player skill, enemy skill, dan typing skill guard.
+
+## Update Implementasi Terbaru - 2026-05-13
+
+- [x] Main menu dibuat dengan tombol `START` dan `LEADERBOARD`.
+- [x] Menu menampilkan idle fighter player/enemy di atas glow biru/merah.
+- [x] Transisi neon dari menu ke fight: slash cyan/pink, flash, dan teks `TYPE TO STRIKE`.
+- [x] `LeaderboardScene` dibuat dan membaca data dari `localStorage`.
+- [x] Leaderboard sort: level terbanyak selesai, waktu tercepat, score tertinggi.
+- [x] Victory panel: `NEXT`, `RETRY`, `MAIN MENU`.
+- [x] Defeat panel: `RETRY`, `MAIN MENU`.
+- [x] Keyboard `N` hanya aktif saat Victory.
+- [x] Result panel menampilkan Combo, Best, Accuracy, Score, Level, dan Rank.
+- [x] Rank duplikat di atas tombol result dihapus.
+- [x] Debug panel HUD gameplay dihapus.
+- [x] Combo kecil diposisikan di bawah panel objective, format `COMBO xN`, tanpa border/background.
+- [x] Dokumen project dikumpulkan di `docs/project`; `AGENTS.md` tetap di root.
+
 # Fight Typing - Task Plan
 
 ## Status Terkini - 2026-05-13
@@ -871,10 +903,10 @@ Acceptance:
 
 ### 17.1 More Prompt Pools
 
-- [ ] Add Indonesian short words.
-- [ ] Add English short words.
-- [ ] Add fighting-themed words.
-- [ ] Add difficulty pools.
+- [ ] Add Indonesian short words, bila nanti mode bahasa Indonesia dipilih.
+- [x] Add English short words.
+- [x] Add fighting-themed words.
+- [x] Add difficulty pools level 1-10.
 
 Acceptance:
 
@@ -893,7 +925,10 @@ Acceptance:
 
 ### 17.3 Special Moves
 
-- [ ] Long prompt triggers special.
+- [x] Two-word skill prompt triggers special attack from level 3+.
+- [x] Skill unlocks after 3 combo points.
+- [x] Skill deals 2x damage and then locks again until recharged.
+- [x] Skill input is guarded with Shift/uppercase first key to avoid accidental activation from normal prompt typing.
 - [ ] Perfect chain triggers combo finisher.
 - [ ] Guard break prompt.
 

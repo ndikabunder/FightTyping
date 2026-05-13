@@ -15,7 +15,7 @@ describe("TypingSystem", () => {
     result = system.handleKey(result.prompts, result.metrics, "b", 200);
 
     expect(result.completedPrompt?.actionId).toBe("attack.punch.right");
-    expect(result.metrics.combo).toBe(1);
+    expect(result.metrics.completedPrompts).toBe(1);
     expect(result.metrics.correctChars).toBe(3);
   });
 

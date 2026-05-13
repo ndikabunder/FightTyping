@@ -1,3 +1,26 @@
+## Update Terbaru - 2026-05-14
+
+- Scene flow sekarang: `BootScene -> PreloadScene -> IntroScene -> MenuScene -> FightScene`, dengan `LeaderboardScene` dari menu.
+- Transisi neon tersedia untuk intro/menu, start gameplay, leaderboard, pergantian level, victory, dan defeat.
+- Menu, leaderboard, dan result panel bisa dipakai dengan keyboard shortcut dan tetap punya hover/focus mouse.
+- Combo system sudah rebuilt dan tampil sebagai `COMBO xN` di bawah objective panel.
+- Level 3+ punya player skill: unlock setelah combo 3x, panel dua kata di bawah kaki player, damage 2x.
+- Skill player hanya mulai dengan Shift/huruf besar saat unlocked supaya tidak aktif dari kata prompt biasa.
+- Level 6+ punya enemy skill: cooldown 150% attack normal, damage 2x, panel hanya menampilkan `Enemy Skill`.
+- Prompt pool level 1-10 sudah diperluas, semua kata bahasa Inggris, dan semakin sulit per level.
+
+## Update Terbaru - 2026-05-13
+
+- Dokumen project utama berada di `docs/project`.
+- `AGENTS.md` tetap berada di root repo.
+- Scene flow: `BootScene -> PreloadScene -> MenuScene -> FightScene`, dengan `LeaderboardScene` dari menu.
+- Main menu: `START`, `LEADERBOARD`, idle fighter, dan transisi neon ke gameplay.
+- Victory: `NEXT`, `RETRY`, `MAIN MENU`.
+- Defeat: `RETRY`, `MAIN MENU`.
+- Leaderboard memakai `localStorage`.
+- Combo tampil di bawah panel objective sebagai `COMBO xN`.
+- Debug panel HUD gameplay sudah dihilangkan.
+
 # Fight Typing
 
 ## Status Terkini - 2026-05-13
@@ -44,13 +67,18 @@ Open `http://127.0.0.1:5173`.
 ## Controls
 
 - Type prompt text: attack with matching limb.
+- Type dodge prompt: move back and avoid enemy attack.
+- Level 3+ skill: build combo 3x, then hold `Shift` for the first skill letter and finish the two-word skill prompt.
 - `Esc`: pause/resume.
 - `` ` ``: toggle hitbox/debug overlay.
-- `R`: restart after win/lose.
+- Menu: `S`/`Enter` start, `L` leaderboard.
+- Leaderboard: `B`/`Esc` back, `S`/`Enter` start, `C` clear.
+- Result: `R` retry, `M`/`Esc` main menu, `N` next on victory only.
+- Level shortcut: `1-9` for level 1-9, `0` for level 10.
 
 ## Asset Swap
 
-Current prototype uses shape-rendered placeholder fighters. Real assets are planned through stable manifest keys in `src/game/assets/manifest.ts`.
+Current prototype uses spritesheet player assets from `assets/images/player`, copied to `public/assets/images/player` for Vite/Phaser loading. Enemy still uses the player sheet as a flipped magenta placeholder until true enemy assets exist.
 
 Replace final asset paths there, keep frame metadata consistent:
 

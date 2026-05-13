@@ -1,6 +1,16 @@
 import type { ActionId } from "../types";
 
-export type WordPoolTier = "easy" | "normal" | "hard";
+export type WordPoolTier =
+  | "level1"
+  | "level2"
+  | "level3"
+  | "level4"
+  | "level5"
+  | "level6"
+  | "level7"
+  | "level8"
+  | "level9"
+  | "level10";
 
 export type EnemyArchetypeId = "basicStriker" | "kicker" | "tempoFighter" | "heavyFighter" | "trickster" | "boss";
 
@@ -66,16 +76,16 @@ export const enemyArchetypes: Record<EnemyArchetypeId, EnemyArchetype> = {
 };
 
 export const levels: LevelDefinition[] = [
-  { id: 1, name: "Warm-Up Guard", focus: "Tutorial tangan", enemyArchetype: "basicStriker", enemyHp: 80, enemyCooldownMs: 5200, enemyTelegraphMs: 1500, wordPoolTier: "easy", objective: "Gunakan tangan kanan dan kiri untuk menang.", arenaTheme: "cyanGrid" },
-  { id: 2, name: "Twin Jab", focus: "Dua tangan", enemyArchetype: "basicStriker", enemyHp: 95, enemyCooldownMs: 4700, enemyTelegraphMs: 1400, wordPoolTier: "easy", objective: "Bangun combo tanpa banyak salah ketik.", arenaTheme: "cyanGrid" },
-  { id: 3, name: "First Kick", focus: "Perkenalan kaki", enemyArchetype: "kicker", enemyHp: 110, enemyCooldownMs: 4300, enemyTelegraphMs: 1300, wordPoolTier: "normal", objective: "Gunakan minimal satu tendangan.", arenaTheme: "violetRing" },
-  { id: 4, name: "Backstep Lesson", focus: "Dodge pertama", enemyArchetype: "kicker", enemyHp: 120, enemyCooldownMs: 4000, enemyTelegraphMs: 1200, wordPoolTier: "normal", objective: "Hindari serangan enemy dengan prompt Mundur.", arenaTheme: "violetRing" },
-  { id: 5, name: "Heavy Check", focus: "Timing dodge", enemyArchetype: "heavyFighter", enemyHp: 160, enemyCooldownMs: 4200, enemyTelegraphMs: 1250, wordPoolTier: "normal", objective: "Jangan tukar damage dengan heavy attack.", arenaTheme: "redPressure" },
-  { id: 6, name: "Tempo Break", focus: "Kecepatan typing", enemyArchetype: "tempoFighter", enemyHp: 130, enemyCooldownMs: 3500, enemyTelegraphMs: 1000, wordPoolTier: "normal", objective: "Jaga tempo dan combo.", arenaTheme: "cyanGrid" },
-  { id: 7, name: "Priority Drill", focus: "Prioritas prompt", enemyArchetype: "tempoFighter", enemyHp: 145, enemyCooldownMs: 3200, enemyTelegraphMs: 900, wordPoolTier: "normal", objective: "Pilih prompt pendek saat enemy hampir menyerang.", arenaTheme: "violetRing" },
-  { id: 8, name: "Mirror Focus", focus: "Fokus dan akurasi", enemyArchetype: "trickster", enemyHp: 150, enemyCooldownMs: 3400, enemyTelegraphMs: 850, wordPoolTier: "hard", objective: "Jangan terkecoh prompt yang mirip.", arenaTheme: "redPressure" },
-  { id: 9, name: "Pressure Mix", focus: "Tekanan campuran", enemyArchetype: "heavyFighter", enemyHp: 190, enemyCooldownMs: 3100, enemyTelegraphMs: 800, wordPoolTier: "hard", objective: "Dodge heavy hit, punish dengan kick.", arenaTheme: "redPressure" },
-  { id: 10, name: "Neon Champion", focus: "Ujian penuh", enemyArchetype: "boss", enemyHp: 240, enemyCooldownMs: 3600, enemyTelegraphMs: 1100, wordPoolTier: "hard", objective: "Kalahkan boss 3 phase.", arenaTheme: "goldFinale" }
+  { id: 1, name: "Warm-Up Guard", focus: "Tutorial tangan", enemyArchetype: "basicStriker", enemyHp: 80, enemyCooldownMs: 5200, enemyTelegraphMs: 1500, wordPoolTier: "level1", objective: "Gunakan tangan kanan dan kiri untuk menang.", arenaTheme: "cyanGrid" },
+  { id: 2, name: "Twin Jab", focus: "Dua tangan", enemyArchetype: "basicStriker", enemyHp: 95, enemyCooldownMs: 4700, enemyTelegraphMs: 1400, wordPoolTier: "level2", objective: "Bangun combo tanpa banyak salah ketik.", arenaTheme: "cyanGrid" },
+  { id: 3, name: "First Kick", focus: "Perkenalan kaki", enemyArchetype: "kicker", enemyHp: 110, enemyCooldownMs: 4300, enemyTelegraphMs: 1300, wordPoolTier: "level3", objective: "Gunakan minimal satu tendangan.", arenaTheme: "violetRing" },
+  { id: 4, name: "Backstep Lesson", focus: "Dodge pertama", enemyArchetype: "kicker", enemyHp: 120, enemyCooldownMs: 4000, enemyTelegraphMs: 1200, wordPoolTier: "level4", objective: "Hindari serangan enemy dengan prompt Mundur.", arenaTheme: "violetRing" },
+  { id: 5, name: "Heavy Check", focus: "Timing dodge", enemyArchetype: "heavyFighter", enemyHp: 160, enemyCooldownMs: 4200, enemyTelegraphMs: 1250, wordPoolTier: "level5", objective: "Jangan tukar damage dengan heavy attack.", arenaTheme: "redPressure" },
+  { id: 6, name: "Tempo Break", focus: "Kecepatan typing", enemyArchetype: "tempoFighter", enemyHp: 130, enemyCooldownMs: 3500, enemyTelegraphMs: 1000, wordPoolTier: "level6", objective: "Jaga tempo dan combo.", arenaTheme: "cyanGrid" },
+  { id: 7, name: "Priority Drill", focus: "Prioritas prompt", enemyArchetype: "tempoFighter", enemyHp: 145, enemyCooldownMs: 3200, enemyTelegraphMs: 900, wordPoolTier: "level7", objective: "Pilih prompt pendek saat enemy hampir menyerang.", arenaTheme: "violetRing" },
+  { id: 8, name: "Mirror Focus", focus: "Fokus dan akurasi", enemyArchetype: "trickster", enemyHp: 150, enemyCooldownMs: 3400, enemyTelegraphMs: 850, wordPoolTier: "level8", objective: "Jangan terkecoh prompt yang mirip.", arenaTheme: "redPressure" },
+  { id: 9, name: "Pressure Mix", focus: "Tekanan campuran", enemyArchetype: "heavyFighter", enemyHp: 190, enemyCooldownMs: 3100, enemyTelegraphMs: 800, wordPoolTier: "level9", objective: "Dodge heavy hit, punish dengan kick.", arenaTheme: "redPressure" },
+  { id: 10, name: "Neon Champion", focus: "Ujian penuh", enemyArchetype: "boss", enemyHp: 240, enemyCooldownMs: 3600, enemyTelegraphMs: 1100, wordPoolTier: "level10", objective: "Kalahkan boss 3 phase.", arenaTheme: "goldFinale" }
 ];
 
 export function getLevel(index: number) {

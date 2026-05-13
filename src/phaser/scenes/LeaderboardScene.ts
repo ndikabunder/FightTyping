@@ -1,13 +1,18 @@
 import Phaser from "phaser";
 import { clearLeaderboard, formatTime, readLeaderboard } from "../../game/systems/LeaderboardStore";
+import { playSlashTransition } from "../fx/SceneTransitions";
 import { GAME_HEIGHT, GAME_WIDTH } from "../config";
 
 export class LeaderboardScene extends Phaser.Scene {
+  private transitioning = false;
+
   constructor() {
     super("LeaderboardScene");
   }
 
   create() {
+    this.transitioning = false;
+    this.input.enabled = true;
     this.createBackground();
     this.add
       .text(GAME_WIDTH / 2, 74, "LEADERBOARD", {
@@ -33,11 +38,45 @@ export class LeaderboardScene extends Phaser.Scene {
       this.drawTable(entries);
     }
 
-    this.footerButton(GAME_WIDTH / 2 - 210, 642, "BACK", () => this.scene.start("MenuScene"));
-    this.footerButton(GAME_WIDTH / 2, 642, "START", () => this.scene.start("FightScene"));
-    this.footerButton(GAME_WIDTH / 2 + 210, 642, "CLEAR", () => {
-      clearLeaderboard();
-      this.scene.restart();
+    this.footerButton(GAME_WIDTH / 2 - 210, 642, "BACK", () => this.backToMenu());
+    this.footerButton(GAME_WIDTH / 2, 642, "START", () => this.startFight());
+    this.footerButton(GAME_WIDTH / 2 + 210, 642, "CLEAR", () => this.clearAndRestart());
+    this.input.keyboard?.on("keydown-B", this.backToMenu, this);
+    this.input.keyboard?.on("keydown-ESC", this.backToMenu, this);
+    this.input.keyboard?.on("keydown-S", this.startFight, this);
+    this.input.keyboard?.on("keydown-ENTER", this.startFight, this);
+    this.input.keyboard?.on("keydown-C", this.clearAndRestart, this);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.shutdown, this);
+  }
+
+  private backToMenu() {
+    this.transitionTo("MenuScene", "MAIN MENU");
+  }
+
+  private startFight() {
+    this.transitionTo("FightScene", "TYPE TO STRIKE");
+  }
+
+  private clearAndRestart() {
+    if (this.transitioning) {
+      return;
+    }
+    clearLeaderboard();
+    this.scene.restart();
+  }
+
+  private transitionTo(sceneKey: "MenuScene" | "FightScene", label: string) {
+    if (this.transitioning) {
+      return;
+    }
+
+    this.transitioning = true;
+    this.input.enabled = false;
+    this.tweens.add({ targets: this.children.list, alpha: 0.3, duration: 160, ease: "Cubic.easeOut" });
+    playSlashTransition(this, {
+      label,
+      accent: sceneKey === "FightScene" ? 0xfff3b0 : 0x7cf7ff,
+      onCovered: () => this.scene.start(sceneKey)
     });
   }
 
@@ -86,20 +125,42 @@ export class LeaderboardScene extends Phaser.Scene {
   }
 
   private footerButton(x: number, y: number, label: string, onClick: () => void) {
+    const container = this.add.container(x, y);
+    const bg = this.add.graphics();
     const text = this.add
-      .text(x, y, label, {
+      .text(0, -5, label, {
         color: "#e8fbff",
         fontFamily: "Trebuchet MS, Arial",
         fontSize: "20px",
-        fontStyle: "900",
-        backgroundColor: "rgba(4, 16, 27, 0.8)",
-        padding: { left: 18, right: 18, top: 10, bottom: 10 }
+        fontStyle: "900"
       })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true });
-    text.on("pointerover", () => text.setColor("#fff3b0"));
-    text.on("pointerout", () => text.setColor("#e8fbff"));
-    text.on("pointerdown", onClick);
+      .setOrigin(0.5);
+    const shortcut = this.add
+      .text(0, 15, shortcutFor(label), {
+        color: "rgba(124, 247, 255, 0.72)",
+        fontFamily: "Trebuchet MS, Arial",
+        fontSize: "10px",
+        fontStyle: "900"
+      })
+      .setOrigin(0.5);
+
+    drawFooterButton(bg, 112, 52, 0x7cf7ff, 0.5);
+    container.add([bg, text, shortcut]);
+    container.setSize(112, 52);
+    container.setInteractive({ useHandCursor: true });
+    container.on("pointerover", () => {
+      bg.clear();
+      drawFooterButton(bg, 124, 56, 0xffd166, 0.86);
+      text.setColor("#fff3b0");
+      shortcut.setColor("#fff3b0");
+    });
+    container.on("pointerout", () => {
+      bg.clear();
+      drawFooterButton(bg, 112, 52, 0x7cf7ff, 0.5);
+      text.setColor("#e8fbff");
+      shortcut.setColor("rgba(124, 247, 255, 0.72)");
+    });
+    container.on("pointerdown", onClick);
   }
 
   private createBackground() {
@@ -112,5 +173,33 @@ export class LeaderboardScene extends Phaser.Scene {
     }
     bg.lineStyle(2, 0xff4d8d, 0.22);
     bg.strokeRoundedRect(88, 112, GAME_WIDTH - 176, 500, 8);
+  }
+
+  private shutdown() {
+    this.input.keyboard?.off("keydown-B", this.backToMenu, this);
+    this.input.keyboard?.off("keydown-ESC", this.backToMenu, this);
+    this.input.keyboard?.off("keydown-S", this.startFight, this);
+    this.input.keyboard?.off("keydown-ENTER", this.startFight, this);
+    this.input.keyboard?.off("keydown-C", this.clearAndRestart, this);
+  }
+}
+
+function drawFooterButton(graphics: Phaser.GameObjects.Graphics, width: number, height: number, color: number, alpha: number) {
+  graphics.fillStyle(0x06101a, 0.86);
+  graphics.lineStyle(2, color, alpha);
+  graphics.fillRoundedRect(-width / 2, -height / 2, width, height, 4);
+  graphics.strokeRoundedRect(-width / 2, -height / 2, width, height, 4);
+}
+
+function shortcutFor(label: string) {
+  switch (label) {
+    case "BACK":
+      return "B / ESC";
+    case "START":
+      return "S / ENTER";
+    case "CLEAR":
+      return "C";
+    default:
+      return "";
   }
 }

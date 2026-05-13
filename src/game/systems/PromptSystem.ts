@@ -8,7 +8,7 @@ const limbs: Limb[] = ["leftHand", "rightHand", "leftLeg", "rightLeg"];
 export class PromptSystem {
   private serial = 0;
 
-  createPrompts(tier: WordPoolTier = "easy"): PromptState[] {
+  createPrompts(tier: WordPoolTier = "level1"): PromptState[] {
     const used: string[] = [];
 
     return limbs.map((limb) => {
@@ -26,7 +26,7 @@ export class PromptSystem {
     });
   }
 
-  replacePrompt(prompts: PromptState[], promptId: string, tier: WordPoolTier = "easy"): PromptState[] {
+  replacePrompt(prompts: PromptState[], promptId: string, tier: WordPoolTier = "level1"): PromptState[] {
     const used = prompts.filter((prompt) => prompt.id !== promptId).map((prompt) => prompt.text);
 
     return prompts.map((prompt) => {

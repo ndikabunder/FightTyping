@@ -5,6 +5,7 @@ import type { ActionId, Fighter, HitEvent, Rect } from "../types";
 const MIN_X = 250;
 const MAX_X = 1030;
 const MAX_DUEL_SPACING = 172;
+const HITSTUN_SLIDE_MS = 420;
 
 export class CombatSystem {
   getAttack(actionId: ActionId) {
@@ -45,7 +46,7 @@ export class CombatSystem {
       const nextX = fighter.position.x + fighter.velocity.x * (deltaMs / 1000);
       const decayedVelocity = fighter.velocity.x * 0.88;
 
-      if (elapsed >= 420) {
+      if (elapsed >= HITSTUN_SLIDE_MS) {
         return {
           ...fighter,
           position: { ...fighter.position, x: clamp(nextX, MIN_X, MAX_X) },
@@ -129,8 +130,9 @@ export class CombatSystem {
     };
 
     const nextAttacker = { ...attacker, hasHitThisAttack: true };
-    const rawDefenderX = defender.position.x + knockDirection * attack.knockback;
-    const defenderX = clampToDuelSpacing(rawDefenderX, nextAttacker.position.x, knockDirection);
+    const rawTargetX = defender.position.x + knockDirection * attack.knockback;
+    const targetX = clampToDuelSpacing(rawTargetX, nextAttacker.position.x, knockDirection);
+    const knockbackVelocityX = ((targetX - defender.position.x) / HITSTUN_SLIDE_MS) * 1000;
 
     return {
       attacker: nextAttacker,
@@ -141,8 +143,7 @@ export class CombatSystem {
         stateElapsedMs: 0,
         activeAttackId: null,
         hasHitThisAttack: false,
-        position: { ...defender.position, x: defenderX },
-        velocity: { x: 0, y: 0 }
+        velocity: { x: knockbackVelocityX, y: 0 }
       },
       hit
     };

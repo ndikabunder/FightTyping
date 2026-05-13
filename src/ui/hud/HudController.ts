@@ -13,7 +13,10 @@ const promptOffsets = {
 
 export class HudController {
   private readonly root: HTMLElement;
-  private lastComboPopAtMs = 0;
+  private readonly onWindowKeyDown = (event: KeyboardEvent) => this.handleShortcut(event);
+  private lastComboSerial = 0;
+  private comboAnimation: { serial: number; startedAtMs: number; durationMs: number } | null = null;
+  private comboAnimationFrame: number | null = null;
 
   constructor(rootId: string, private readonly onCommand: (command: "retry" | "next" | "menu") => void = () => undefined) {
     const root = document.getElementById(rootId);
@@ -21,6 +24,7 @@ export class HudController {
       throw new Error(`Missing HUD root #${rootId}`);
     }
     this.root = root;
+    window.addEventListener("keydown", this.onWindowKeyDown);
   }
 
   render(snapshot: GameSnapshot) {
@@ -33,25 +37,34 @@ export class HudController {
       <div class="metrics">
         <span>Lv ${snapshot.level.id}</span>
       </div>
-      <div class="level-chip">
-        <strong>${snapshot.level.name}</strong>
-        <span>${snapshot.level.enemyName} - ${snapshot.level.phaseLabel}</span>
-        <small>${snapshot.level.objective}</small>
+      <div class="level-status">
+        <div class="level-chip">
+          <strong>${snapshot.level.name}</strong>
+          <span>${snapshot.level.enemyName} - ${snapshot.level.phaseLabel}</span>
+          <small>${snapshot.level.objective}</small>
+        </div>
+        ${this.comboBadge(snapshot)}
       </div>
-      ${this.comboBadge(snapshot)}
       <div class="prompts">
         ${snapshot.prompts.map((prompt) => this.prompt(prompt, snapshot)).join("")}
         ${snapshot.dodgePrompt ? this.dodgePrompt(snapshot.dodgePrompt, snapshot) : ""}
       </div>
+      ${this.skillPanel(snapshot)}
+      ${this.enemySkillPanel(snapshot)}
       ${this.enemyCooldown(snapshot)}
       ${this.feedback(snapshot)}
       ${this.resultOverlay(snapshot)}
     `;
     this.bindResultButtons();
-    this.animateComboBadge(snapshot);
+    this.syncComboAnimation(snapshot);
   }
 
   destroy() {
+    if (this.comboAnimationFrame !== null) {
+      window.cancelAnimationFrame(this.comboAnimationFrame);
+      this.comboAnimationFrame = null;
+    }
+    window.removeEventListener("keydown", this.onWindowKeyDown);
     this.root.innerHTML = "";
   }
 
@@ -118,6 +131,61 @@ export class HudController {
     `;
   }
 
+  private skillPanel(snapshot: GameSnapshot) {
+    if (!snapshot.skill.available) {
+      return "";
+    }
+
+    const pos = {
+      x: snapshot.player.position.x,
+      y: snapshot.player.position.y + 70
+    };
+    const pctValue = Math.round(snapshot.skill.progress * 100);
+    const state = snapshot.skill.unlocked ? snapshot.skill.status : "locked";
+    const typed = snapshot.skill.typed.length;
+    let index = 0;
+    const words = snapshot.skill.words
+      .map((word) => {
+        const chars = [...word]
+          .map((char) => {
+            const typedClass = index < typed ? "typed" : "";
+            index += 1;
+            return `<span class="${typedClass}">${char}</span>`;
+          })
+          .join("");
+        return `<strong>${chars}</strong>`;
+      })
+      .join("<em> </em>");
+
+    return `
+      <div class="skill-panel ${state}" style="left:${pct(pos.x, LOGICAL_WIDTH)}%;top:${pct(pos.y, LOGICAL_HEIGHT)}%">
+        <div class="skill-charge"><b style="width:${pctValue}%"></b></div>
+        <small>${snapshot.skill.unlocked ? "Skill x2 Ready - hold Shift" : `Skill Lock ${Math.min(snapshot.combo.count, snapshot.skill.requiredCombo)}/${snapshot.skill.requiredCombo}`}</small>
+        <div class="skill-words">${words}</div>
+      </div>
+    `;
+  }
+
+  private enemySkillPanel(snapshot: GameSnapshot) {
+    if (!snapshot.enemySkill.available) {
+      return "";
+    }
+
+    const pos = {
+      x: snapshot.enemy.position.x,
+      y: snapshot.enemy.position.y + 70
+    };
+    const pctValue = Math.max(0, Math.min(100, (snapshot.enemySkill.clockMs / snapshot.enemySkill.cooldownMs) * 100));
+    const state = pctValue >= 82 ? "danger" : snapshot.enemySkill.telegraphMs > 0 ? "warning" : "charging";
+    return `
+      <div class="enemy-skill-panel ${state}" style="left:${pct(pos.x, LOGICAL_WIDTH)}%;top:${pct(pos.y, LOGICAL_HEIGHT)}%">
+        <div class="enemy-skill-charge"><b style="width:${pctValue}%"></b></div>
+        <small>Enemy Skill x2</small>
+        <strong>Enemy Skill</strong>
+      </div>
+    `;
+  }
+
   private feedback(snapshot: GameSnapshot) {
     if (!snapshot.feedback) {
       return "";
@@ -127,44 +195,15 @@ export class HudController {
   }
 
   private comboBadge(snapshot: GameSnapshot) {
-    if (snapshot.metrics.combo <= 0) {
+    if (snapshot.combo.count <= 0) {
       return "";
     }
 
     return `
-      <div class="level-combo ${comboTier(snapshot.metrics.combo)}">
-        <span>COMBO</span><strong>x${snapshot.metrics.combo}</strong>
+      <div class="combo-readout ${snapshot.combo.tier}" data-combo-serial="${snapshot.combo.serial}" aria-label="${snapshot.combo.label}">
+        <span>COMBO</span><strong>x${snapshot.combo.count}</strong>
       </div>
     `;
-  }
-
-  private animateComboBadge(snapshot: GameSnapshot) {
-    if (snapshot.metrics.combo <= 0 || snapshot.metrics.comboJustChangedAtMs <= 0) {
-      return;
-    }
-
-    if (snapshot.metrics.comboJustChangedAtMs === this.lastComboPopAtMs) {
-      return;
-    }
-
-    this.lastComboPopAtMs = snapshot.metrics.comboJustChangedAtMs;
-    const badge = this.root.querySelector<HTMLElement>(".level-combo");
-    if (!badge) {
-      return;
-    }
-
-    badge.animate(
-      [
-        { opacity: 0, transform: "translate(-50%, -50%) scale(0.65)", filter: "brightness(1)" },
-        { opacity: 1, transform: "translate(-50%, -50%) scale(1.95)", filter: "brightness(1.85)", offset: 0.36 },
-        { opacity: 1, transform: "translate(-50%, -50%) scale(1)", filter: "brightness(1)" }
-      ],
-      {
-        duration: 520,
-        easing: "cubic-bezier(0.16, 1.3, 0.3, 1)",
-        fill: "none"
-      }
-    );
   }
 
   private roundLabel(snapshot: GameSnapshot) {
@@ -194,19 +233,20 @@ export class HudController {
     }
     const text = snapshot.roundState === "paused" ? "Paused" : snapshot.roundState === "won" ? "Victory" : "Defeat";
     const sub = snapshot.roundState === "paused" ? "Press Esc to resume" : "";
+    const stateClass = snapshot.roundState === "won" ? "victory" : snapshot.roundState === "lost" ? "defeat" : "paused";
     const buttons =
       snapshot.roundState === "won"
-        ? `<button data-command="next">NEXT</button><button data-command="retry">RETRY</button><button data-command="menu">MAIN MENU</button>`
+        ? `<button data-command="next">NEXT <small>N</small></button><button data-command="retry">RETRY <small>R</small></button><button data-command="menu">MAIN MENU <small>M</small></button>`
         : snapshot.roundState === "lost"
-        ? `<button data-command="retry">RETRY</button><button data-command="menu">MAIN MENU</button>`
+        ? `<button data-command="retry">RETRY <small>R</small></button><button data-command="menu">MAIN MENU <small>M</small></button>`
         : "";
     return `
-      <div class="result-overlay">
+      <div class="result-overlay ${stateClass}">
         <div class="result-card">
           <h1>${text}</h1>
           <div class="result-stats">
-            <span><small>Combo</small><strong>${snapshot.metrics.combo}</strong></span>
-            <span><small>Best</small><strong>${snapshot.metrics.bestCombo}</strong></span>
+            <span><small>Combo</small><strong>${snapshot.combo.count}</strong></span>
+            <span><small>Best</small><strong>${snapshot.combo.best}</strong></span>
             <span><small>Accuracy</small><strong>${accuracy(snapshot)}%</strong></span>
             <span><small>Score</small><strong>${snapshot.level.score}</strong></span>
             <span><small>Level</small><strong>${snapshot.level.id}</strong></span>
@@ -228,6 +268,100 @@ export class HudController {
         }
       });
     });
+  }
+
+  private handleShortcut(event: KeyboardEvent) {
+    if (event.repeat) {
+      return;
+    }
+
+    const key = event.key.toLowerCase();
+    const command =
+      key === "n" ? "next" : key === "r" ? "retry" : key === "m" || key === "escape" ? "menu" : key === "enter" ? this.defaultCommand() : null;
+
+    if (!command) {
+      return;
+    }
+
+    const button = this.root.querySelector<HTMLButtonElement>(`[data-command="${command}"]`);
+    if (!button) {
+      return;
+    }
+
+    event.preventDefault();
+    this.onCommand(command);
+  }
+
+  private defaultCommand(): "next" | "retry" | "menu" | null {
+    const button = this.root.querySelector<HTMLButtonElement>("[data-command]");
+    const command = button?.dataset.command;
+    return command === "next" || command === "retry" || command === "menu" ? command : null;
+  }
+
+  private syncComboAnimation(snapshot: GameSnapshot) {
+    if (snapshot.combo.serial === 0) {
+      this.lastComboSerial = 0;
+      this.comboAnimation = null;
+      return;
+    }
+
+    if (snapshot.combo.event !== "gain" || snapshot.combo.count <= 0) {
+      return;
+    }
+
+    if (snapshot.combo.serial !== this.lastComboSerial) {
+      this.lastComboSerial = snapshot.combo.serial;
+      this.comboAnimation = {
+        serial: snapshot.combo.serial,
+        startedAtMs: performance.now(),
+        durationMs: 520
+      };
+    }
+
+    this.paintComboAnimationFrame();
+
+    if (this.comboAnimationFrame === null && this.comboAnimation) {
+      this.comboAnimationFrame = window.requestAnimationFrame(() => this.stepComboAnimation());
+    }
+  }
+
+  private stepComboAnimation() {
+    this.comboAnimationFrame = null;
+
+    if (!this.paintComboAnimationFrame() || !this.comboAnimation) {
+      return;
+    }
+
+    this.comboAnimationFrame = window.requestAnimationFrame(() => this.stepComboAnimation());
+  }
+
+  private paintComboAnimationFrame() {
+    if (!this.comboAnimation) {
+      return false;
+    }
+
+    const readout = this.root.querySelector<HTMLElement>(`.combo-readout[data-combo-serial="${this.comboAnimation.serial}"]`);
+    const elapsedMs = performance.now() - this.comboAnimation.startedAtMs;
+    const progress = Math.min(1, elapsedMs / this.comboAnimation.durationMs);
+
+    if (readout && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      const frame = comboPopFrame(progress);
+      readout.style.opacity = String(frame.opacity);
+      readout.style.transform = `scale(${frame.scale}) translateY(${frame.y}px)`;
+      readout.style.filter = `drop-shadow(0 0 ${frame.glow}px rgba(255, 243, 176, ${frame.glowAlpha}))`;
+    }
+
+    if (progress >= 1) {
+      if (readout) {
+        readout.style.opacity = "";
+        readout.style.transform = "";
+        readout.style.filter = "";
+      }
+      this.comboAnimation = null;
+      return false;
+    }
+
+    return true;
   }
 }
 
@@ -258,15 +392,43 @@ function attackLabel(actionId: string) {
   }
 }
 
-function comboTier(combo: number) {
-  if (combo >= 10) {
-    return "mega";
+function comboPopFrame(progress: number) {
+  if (progress < 0.28) {
+    const local = easeOutCubic(progress / 0.28);
+    return {
+      opacity: Math.min(1, progress / 0.08),
+      scale: lerp(0.72, 1.9, local),
+      y: lerp(10, -3, local),
+      glow: lerp(0, 20, local),
+      glowAlpha: lerp(0, 0.86, local)
+    };
   }
-  if (combo >= 5) {
-    return "power";
+
+  if (progress < 0.72) {
+    const local = easeOutCubic((progress - 0.28) / 0.44);
+    return {
+      opacity: 1,
+      scale: lerp(1.9, 0.94, local),
+      y: lerp(-3, 0, local),
+      glow: lerp(20, 10, local),
+      glowAlpha: lerp(0.86, 0.5, local)
+    };
   }
-  if (combo >= 3) {
-    return "chain";
-  }
-  return "fresh";
+
+  const local = easeOutCubic((progress - 0.72) / 0.28);
+  return {
+    opacity: 1,
+    scale: lerp(0.94, 1, local),
+    y: 0,
+    glow: lerp(10, 8, local),
+    glowAlpha: lerp(0.5, 0.32, local)
+  };
+}
+
+function lerp(from: number, to: number, progress: number) {
+  return from + (to - from) * progress;
+}
+
+function easeOutCubic(value: number) {
+  return 1 - Math.pow(1 - value, 3);
 }

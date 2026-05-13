@@ -88,15 +88,45 @@ export interface TypingMetrics {
   keystrokes: number;
   correctChars: number;
   wrongChars: number;
-  combo: number;
-  bestCombo: number;
   completedPrompts: number;
   totalCompletionMs: number;
   dodgeSuccesses: number;
   damageTaken: number;
   limbHits: Partial<Record<Limb, number>>;
-  comboJustChangedAtMs: number;
-  comboMilestone: number;
+}
+
+export type ComboTier = "none" | "fresh" | "chain" | "power" | "mega";
+
+export interface ComboState {
+  count: number;
+  best: number;
+  serial: number;
+  event: "gain" | "break" | null;
+  label: string;
+  tier: ComboTier;
+  changedAtMs: number;
+}
+
+export interface SkillState {
+  available: boolean;
+  unlocked: boolean;
+  progress: number;
+  requiredCombo: number;
+  chargeBaseCombo: number;
+  words: [string, string];
+  typed: string;
+  status: "locked" | "ready" | "matching" | "wrong" | "completed";
+  usedSerial: number;
+}
+
+export interface EnemySkillState {
+  available: boolean;
+  clockMs: number;
+  cooldownMs: number;
+  telegraphMs: number;
+  incomingAttackId: ActionId | null;
+  active: boolean;
+  usedSerial: number;
 }
 
 export interface LevelRuntimeState {
@@ -107,7 +137,7 @@ export interface LevelRuntimeState {
   enemyName: string;
   objective: string;
   arenaTheme: string;
-  wordPoolTier: "easy" | "normal" | "hard";
+  wordPoolTier: "level1" | "level2" | "level3" | "level4" | "level5" | "level6" | "level7" | "level8" | "level9" | "level10";
   score: number;
   rank: "S" | "A" | "B" | "C" | "-";
   phase: number;
@@ -115,7 +145,7 @@ export interface LevelRuntimeState {
 }
 
 export interface CombatFeedback {
-  kind: "correct" | "wrong" | "complete" | "dodge" | "hit" | "whiff" | "ko" | "combo" | "comboBreak";
+  kind: "correct" | "wrong" | "complete" | "dodge" | "hit" | "whiff" | "ko" | "skill";
   label: string;
   atMs: number;
 }
@@ -125,6 +155,9 @@ export interface GameSnapshot {
   enemy: Fighter;
   prompts: PromptState[];
   metrics: TypingMetrics;
+  combo: ComboState;
+  skill: SkillState;
+  enemySkill: EnemySkillState;
   roundState: "countdown" | "fighting" | "won" | "lost" | "paused";
   countdownMs: number;
   enemyTelegraphMs: number;

@@ -12,15 +12,11 @@ export function createTypingMetrics(): TypingMetrics {
     keystrokes: 0,
     correctChars: 0,
     wrongChars: 0,
-    combo: 0,
-    bestCombo: 0,
     completedPrompts: 0,
     totalCompletionMs: 0,
     dodgeSuccesses: 0,
     damageTaken: 0,
-    limbHits: {},
-    comboJustChangedAtMs: 0,
-    comboMilestone: 0
+    limbHits: {}
   };
 }
 
@@ -47,9 +43,6 @@ export class TypingSystem {
 
     if (!activePrompt) {
       nextMetrics.wrongChars += 1;
-      nextMetrics.combo = 0;
-      nextMetrics.comboJustChangedAtMs = metrics.combo > 0 ? nowMs : metrics.comboJustChangedAtMs;
-      nextMetrics.comboMilestone = 0;
       return {
         prompts: markWrong(prompts),
         metrics: nextMetrics,
@@ -67,9 +60,6 @@ export class TypingSystem {
 
     if (char !== expected) {
       nextMetrics.wrongChars += 1;
-      nextMetrics.combo = 0;
-      nextMetrics.comboJustChangedAtMs = metrics.combo > 0 ? nowMs : metrics.comboJustChangedAtMs;
-      nextMetrics.comboMilestone = 0;
       return {
         prompts: prompts.map((prompt) =>
           prompt.id === activePrompt.id ? { ...prompt, status: "wrong" } : prompt
@@ -91,12 +81,8 @@ export class TypingSystem {
     };
 
     if (completed) {
-      nextMetrics.combo += 1;
-      nextMetrics.bestCombo = Math.max(nextMetrics.bestCombo, nextMetrics.combo);
       nextMetrics.completedPrompts += 1;
       nextMetrics.totalCompletionMs += Math.max(1, nowMs - this.promptStartedAtMs);
-      nextMetrics.comboJustChangedAtMs = nowMs;
-      nextMetrics.comboMilestone = comboMilestone(nextMetrics.combo);
       this.lockedPromptId = null;
       this.promptStartedAtMs = 0;
     }
@@ -126,17 +112,4 @@ function normalizeKey(key: string) {
 
 function markWrong(prompts: PromptState[]) {
   return prompts.map((prompt) => ({ ...prompt, status: "wrong" as const }));
-}
-
-function comboMilestone(combo: number) {
-  if (combo > 0 && combo % 10 === 0) {
-    return 10;
-  }
-  if (combo > 0 && combo % 5 === 0) {
-    return 5;
-  }
-  if (combo > 0 && combo % 3 === 0) {
-    return 3;
-  }
-  return 0;
 }

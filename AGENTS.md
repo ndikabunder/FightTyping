@@ -12,6 +12,17 @@ Dokumen project utama sudah dikumpulkan di `docs/project`:
 
 `AGENTS.md` tetap berada di root repo agar instruksi agent otomatis terbaca.
 
+Update implementasi terbaru:
+
+- Flow scene: `BootScene -> PreloadScene -> MenuScene -> FightScene`, dan `LeaderboardScene` dari main menu.
+- Main menu punya `START`, `LEADERBOARD`, idle fighter player/enemy, dan transisi neon slash ke gameplay.
+- Leaderboard memakai `localStorage`, sort berdasarkan level terbanyak selesai, waktu tercepat, lalu score tertinggi.
+- Victory panel punya `NEXT`, `RETRY`, `MAIN MENU`; Defeat panel hanya `RETRY`, `MAIN MENU`.
+- Keyboard `N` hanya lanjut level saat Victory.
+- Combo badge tampil di bawah panel objective sebagai `COMBO xN`, tanpa border/background, dan tidak boleh flicker.
+- Debug panel HUD gameplay sudah dihilangkan; jangan kembalikan panel debug permanen kecuali user meminta.
+- Tema SFX yang direkomendasikan: `Cyber Martial Typing / Neon Impact`.
+
 Panduan untuk agent yang bekerja di repo ini.
 
 ## Bahasa dan Gaya

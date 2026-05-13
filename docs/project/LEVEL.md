@@ -1,3 +1,22 @@
+## Update Implementasi Level Terbaru - 2026-05-14
+
+- Word pool level 1-10 sudah diimplementasikan sebagai pool bahasa Inggris yang makin panjang dan makin teknis.
+- Level 3 menjadi titik masuk player skill: pemain belajar menjaga combo 3x untuk membuka `Skill x2`.
+- Level 6 menjadi titik masuk enemy skill: enemy mendapat skill dengan cooldown 150% dari attack normal dan damage 2x.
+- Skill player memakai dua kata acak dari pool skill, sehingga tiap level tidak selalu menampilkan `power strike`.
+- Skill player sengaja butuh Shift/huruf besar untuk input pertama agar tidak mengganggu prompt attack/dodge normal.
+- Enemy skill hanya memberi warning `Enemy Skill`; jenis serangan tidak ditampilkan agar pemain membaca timing, bukan bocoran move.
+- Shortcut level tetap `1-9` dan `0`, sementara menu/leaderboard/result sekarang bisa dipakai tanpa mouse.
+
+## Update Implementasi Level Terbaru - 2026-05-13
+
+- Game saat ini memiliki 10 level arcade.
+- Shortcut level tetap tersedia: `1-9` untuk level 1-9, `0` untuk level 10.
+- Victory bisa lanjut ke level berikutnya lewat `NEXT` atau `N`.
+- Defeat hanya bisa retry atau kembali ke main menu.
+- Leaderboard menyimpan level tertinggi yang berhasil diselesaikan dalam run.
+- Result panel menampilkan level dan rank sebagai statistik akhir.
+
 # Fight Typing - Level & Difficulty Design Plan
 
 ## Status Terkini - 2026-05-13
