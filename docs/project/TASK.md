@@ -1,18 +1,44 @@
+## Update Implementasi Terbaru - 2026-05-18
+
+- [x] Terapkan spritesheet `skill.png`, `death.png`, dan `victory.png` ke renderer player/enemy.
+- [x] Copy runtime asset baru ke `public/assets/images/player`.
+- [x] Atur animasi death agar langsung muncul saat serangan terakhir menyebabkan KO.
+- [x] Atur animasi victory player sebagai outcome setelah final strike.
+- [x] Revisi quest level 3 menjadi `Combo x3`.
+
 ## Update Implementasi Terbaru - 2026-05-14
 
+- [x] Sinkronisasi dokumen `docs/project` dengan semua file modified/untracked di working tree.
 - [x] Tambah `IntroScene` sebelum `MenuScene`.
 - [x] Tambah transisi neon untuk masuk gameplay, ganti level, buka leaderboard, dan muncul result panel.
 - [x] Tambah keyboard shortcut untuk menu, leaderboard, dan result panel.
 - [x] Tambah hover/focus state pada button.
 - [x] Rebuild combo ke `ComboSystem` terpisah dengan count, best, tier, event serial, dan score feedback.
 - [x] Buat ulang UI combo `COMBO xN` di bawah objective panel dengan animasi manual agar tidak flicker.
-- [x] Tambah player skill level 3+: unlock dari combo 3x, progress bar, panel dua kata, damage 2x.
-- [x] Cegah skill aktif tidak sengaja dari input prompt biasa; skill hanya mulai saat unlocked dan input pertama memakai Shift/huruf besar.
+- [x] Tambah player skill `Neon Break` level 3+: unlock dari combo 3x, progress bar, panel dua kata, damage 2x, reset tekanan enemy.
+- [x] Skill aktif saat unlocked dan langsung diketik seperti prompt lain.
 - [x] Randomisasi dua kata skill player dari pool Inggris.
-- [x] Tambah enemy skill level 6+: cooldown 150% attack normal, damage 2x, panel di bawah kaki enemy.
+- [x] Tambah enemy skill level 6+: cooldown 300% attack normal, damage 2x, panel di bawah kaki enemy.
 - [x] Sembunyikan jenis serangan enemy skill dari UI; panel hanya menampilkan `Enemy Skill`.
 - [x] Perluas prompt pool menjadi `level1` sampai `level10`, semua bahasa Inggris, dan semakin sulit per level.
 - [x] Tambah test untuk `ComboSystem`, `SkillSystem`, player skill, enemy skill, dan typing skill guard.
+- [x] Tambah SFX `victory`, `defeat`, dan `wrong`.
+- [x] Tambah wrong input shake ke panel prompt/skill aktif.
+- [x] Refactor tuning combat/skill/dodge/score ke `src/game/content/fightRules.ts`.
+- [x] Refactor player spritesheet data ke `src/phaser/assets/playerSpritesheets.ts`.
+- [x] Tambah helper audio `src/phaser/audio/GameAudio.ts` untuk preload/play BGM dan SFX.
+- [x] Tambah asset SFX source di `assets/Sound` dan runtime copy di `public/assets/sound`.
+- [x] Tambah/copy asset player runtime ke `public/assets/images/player`.
+- [x] Tambah panduan penulisan kode di `docs/project/CODE_GUIDE.md`.
+- [x] Bedakan fungsi tiap limb: punch kanan cepat, punch kiri combo, kick kanan damage/range, kick kiri stagger enemy.
+- [x] Bedakan enemy archetype lewat damage, cooldown, dodge chance, dan feint chance.
+- [x] Tambah enemy nameplate di atas cooldown attack untuk menandai lawan yang sedang dihadapi.
+- [x] Tambah objective kecil per level dengan progress HUD dan score bonus.
+- [x] Tambah pacing wave/phase agar pressure berubah dalam round panjang.
+- [x] Tambah `vite.config.mjs` untuk split chunk `phaser` dan hilangkan warning build chunk besar.
+- [x] Tambah dokumen UI/UX guide di `docs/project/UI_UX_GUIDE.md`.
+- [x] Tambah `CombatSystem.wouldHit()` untuk threat check enemy dodge/feint.
+- [x] Update `TypingSystem` agar skill prompt punya guard saat belum aktif/unlocked.
 
 ## Update Implementasi Terbaru - 2026-05-13
 
@@ -215,6 +241,7 @@ Acceptance:
 - [x] Buat `src/game/content/attacks.ts`.
 - [x] Buat `src/game/content/hitboxes.ts`.
 - [x] Buat `src/game/content/promptPools.ts`.
+- [x] Buat `src/game/content/fightRules.ts`.
 - [x] Buat asset manifest/content boundary.
 - [x] Buat action typing/combat mapping.
 
@@ -347,7 +374,7 @@ Acceptance:
 - [ ] Support difficulty:
   - [x] easy 3-4 huruf
   - [x] normal 5-7 huruf
-  - [ ] hard 8+ huruf
+  - [x] hard 8+ huruf via pool level tinggi
 
 Acceptance:
 
@@ -756,13 +783,14 @@ Acceptance:
 
 ### 13.1 Placeholder SFX
 
-- [ ] type correct
-- [ ] type wrong
+- [x] type correct
+- [x] type wrong
 - [ ] prompt complete
-- [ ] punch hit
-- [ ] kick hit
+- [x] punch hit
+- [x] kick hit
 - [ ] enemy hit
-- [ ] KO
+- [x] victory
+- [x] defeat
 
 Acceptance:
 
@@ -928,7 +956,7 @@ Acceptance:
 - [x] Two-word skill prompt triggers special attack from level 3+.
 - [x] Skill unlocks after 3 combo points.
 - [x] Skill deals 2x damage and then locks again until recharged.
-- [x] Skill input is guarded with Shift/uppercase first key to avoid accidental activation from normal prompt typing.
+- [x] Skill input langsung diketik saat unlocked.
 - [ ] Perfect chain triggers combo finisher.
 - [ ] Guard break prompt.
 
@@ -1039,12 +1067,13 @@ Acceptance:
 
 ### 20.2 Documentation
 
-- [ ] Update `docs/project/README.md` with:
-  - [ ] install
-  - [ ] dev command
-  - [ ] controls
-  - [ ] asset replacement guide
-  - [ ] debug keys
+- [x] Update `docs/project/README.md` with:
+  - [x] install
+  - [x] dev command
+  - [x] controls
+  - [x] asset replacement guide
+  - [x] debug keys
+- [x] Add `docs/project/CODE_GUIDE.md`.
 - [ ] Update `docs/project/GDD.md` if design changed.
 - [ ] Keep `docs/project/TASK.md` checked off.
 

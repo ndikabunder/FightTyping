@@ -40,6 +40,10 @@ export interface AttackData {
   range: number;
   hitstunMs: number;
   knockback: number;
+  effect?: {
+    comboGain?: number;
+    enemyDelayMs?: number;
+  };
 }
 
 export interface HitboxWindow {
@@ -142,12 +146,19 @@ export interface LevelRuntimeState {
   rank: "S" | "A" | "B" | "C" | "-";
   phase: number;
   phaseLabel: string;
+  objectiveProgress: {
+    label: string;
+    current: number;
+    target: number;
+    completed: boolean;
+  };
 }
 
 export interface CombatFeedback {
   kind: "correct" | "wrong" | "complete" | "dodge" | "hit" | "whiff" | "ko" | "skill";
   label: string;
   atMs: number;
+  targetId?: string;
 }
 
 export interface GameSnapshot {

@@ -28,7 +28,7 @@ describe("SkillSystem", () => {
     const text = skill.words.join("");
 
     for (const [index, char] of [...text].entries()) {
-      const result = system.handleKey(skill, char, index === 0);
+      const result = system.handleKey(skill, char);
       skill = result.skill;
       completed = result.completed;
     }
@@ -38,15 +38,15 @@ describe("SkillSystem", () => {
     expect(skill.status).toBe("completed");
   });
 
-  it("does not consume normal prompt input when skill is ready", () => {
+  it("starts skill typing without requiring Shift when skill is ready", () => {
     const system = new SkillSystem();
     const skill = system.syncWithCombo(createSkillState(3), 3);
     const firstSkillChar = skill.words.join("")[0];
 
-    const result = system.handleKey(skill, firstSkillChar, false);
+    const result = system.handleKey(skill, firstSkillChar);
 
-    expect(result.consumed).toBe(false);
-    expect(result.skill.typed).toBe("");
+    expect(result.consumed).toBe(true);
+    expect(result.skill.typed).toBe(firstSkillChar);
   });
 
   it("requires three fresh combo points after a skill is consumed", () => {

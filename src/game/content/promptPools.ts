@@ -65,8 +65,8 @@ export const promptPools: Record<WordPoolTier, Record<Limb, string[]>> = {
 };
 
 export const limbLabels: Record<Limb, string> = {
-  rightHand: "Tangan Kanan",
-  leftHand: "Tangan Kiri",
-  rightLeg: "Kaki Kanan",
-  leftLeg: "Kaki Kiri"
+  rightHand: "Right Hand",
+  leftHand: "Left Hand",
+  rightLeg: "Right Leg",
+  leftLeg: "Left Leg"
 };

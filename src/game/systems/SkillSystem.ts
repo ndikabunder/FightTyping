@@ -59,10 +59,10 @@ export class SkillSystem {
     };
   }
 
-  handleKey(current: SkillState, key: string, forceSkillInput = false): SkillInputResult {
+  handleKey(current: SkillState, key: string): SkillInputResult {
     const char = normalizeKey(key);
 
-    if (!current.available || !current.unlocked || !char || (!forceSkillInput && current.typed.length === 0)) {
+    if (!current.available || !current.unlocked || !char) {
       return { skill: current, completed: false, wrong: false, consumed: false };
     }
 

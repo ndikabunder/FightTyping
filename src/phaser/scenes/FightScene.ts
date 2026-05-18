@@ -6,6 +6,7 @@ import { FighterRenderer } from "../view/FighterRenderer";
 import { HudController } from "../../ui/hud/HudController";
 import { playSlashTransition } from "../fx/SceneTransitions";
 import { saveLeaderboardEntry } from "../../game/systems/LeaderboardStore";
+import { ensureBgm, playSfx, sfxForAttack } from "../audio/GameAudio";
 import type { GameSnapshot, HitEvent } from "../../game/types";
 
 export class FightScene extends Phaser.Scene {
@@ -21,17 +22,24 @@ export class FightScene extends Phaser.Scene {
   private lastArenaTheme = "";
   private lastPlayerVisualSerial = 0;
   private lastEnemyVisualSerial = 0;
+  private lastEnemyDodgeAt = -1;
   private runStartedAtMs = 0;
   private bestCompletedLevel = 0;
   private lastSavedRoundState: GameSnapshot["roundState"] | null = null;
   private transitioning = false;
+  private combatTimeScale = 1;
+  private finalBlowActive = false;
+  private pendingResultReveal = false;
+  private finalBlowFx: Phaser.GameObjects.GameObject[] = [];
 
   constructor() {
     super("FightScene");
   }
 
   create() {
+    ensureBgm(this);
     this.transitioning = false;
+    this.lastEnemyDodgeAt = -1;
     this.input.enabled = true;
     this.simulation = new FightSimulation();
     this.arena = this.add.graphics().setDepth(-10);
@@ -51,20 +59,28 @@ export class FightScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number) {
-    const hit = this.simulation.update(delta, this.time.now);
+    const hit = this.simulation.update(delta * this.combatTimeScale, this.time.now);
     const snapshot = this.simulation.getSnapshot();
 
     if (hit) {
+      this.playFinalBlowFx(hit, snapshot);
       this.playHitFx(hit);
     }
 
-    this.saveResultIfNeeded(snapshot);
+    if (!this.finalBlowActive) {
+      this.saveResultIfNeeded(snapshot);
+    }
     this.playDashFxForNewActions(snapshot);
     this.renderAll(snapshot);
+    this.playEnemyEvadeFx(snapshot);
     this.playFeedbackSfx(snapshot);
   }
 
   private onKeyDown(event: KeyboardEvent) {
+    if (this.simulation.getSnapshot().roundState === "fighting" && /^[a-zA-Z]$/.test(event.key)) {
+      playSfx(this, "typing", 0.38);
+    }
+
     this.simulation.handleKey(event.key, this.time.now);
     const snapshot = this.simulation.getSnapshot();
     if (snapshot.roundState === "countdown") {
@@ -72,6 +88,7 @@ export class FightScene extends Phaser.Scene {
     }
     this.playDashFxForNewActions(snapshot);
     this.renderAll(snapshot);
+    this.playEnemyEvadeFx(snapshot);
     this.playFeedbackSfx(snapshot);
   }
 
@@ -114,6 +131,8 @@ export class FightScene extends Phaser.Scene {
         this.lastHudHash = "";
         this.lastPlayerVisualSerial = 0;
         this.lastEnemyVisualSerial = 0;
+        this.lastEnemyDodgeAt = -1;
+        this.resetFinalBlowFx();
         this.input.enabled = true;
         this.transitioning = false;
         this.renderAll(this.simulation.getSnapshot());
@@ -126,32 +145,15 @@ export class FightScene extends Phaser.Scene {
       this.createArena(snapshot.level.arenaTheme);
     }
 
-    this.playerRenderer.sync(snapshot.player);
-    this.enemyRenderer.sync(snapshot.enemy);
+    const skillFeedbackAt = snapshot.feedback?.kind === "skill" && snapshot.feedback.label !== "Enemy Skill" ? snapshot.feedback.atMs : -1;
+    this.playerRenderer.sync(snapshot.player, snapshot.roundState, skillFeedbackAt, this.pendingResultReveal);
+    this.enemyRenderer.sync(snapshot.enemy, snapshot.roundState, -1, this.pendingResultReveal);
     this.debugRenderer.render(snapshot);
 
-    const hudHash = JSON.stringify({
-      prompts: snapshot.prompts,
-      metrics: snapshot.metrics,
-      combo: snapshot.combo,
-      skill: snapshot.skill,
-      enemySkill: snapshot.enemySkill,
-      hp: [snapshot.player.hp, snapshot.enemy.hp],
-      state: snapshot.roundState,
-      countdown: Math.ceil(snapshot.countdownMs / 200),
-      enemyTelegraph: Math.ceil(snapshot.enemyTelegraphMs / 200),
-      enemyCooldown: Math.floor(snapshot.enemyAttackClockMs / 50),
-      incoming: snapshot.enemyIncomingAttackId,
-      debug: snapshot.debugEnabled,
-      level: snapshot.level,
-      feedback: snapshot.feedback,
-      playerState: snapshot.player.state,
-      enemyState: snapshot.enemy.state,
-      lastHit: snapshot.lastHit?.atMs
-    });
+    const hudHash = createHudHash(snapshot);
 
     if (hudHash !== this.lastHudHash) {
-      this.hud.render(snapshot);
+      this.hud.render(snapshot, { suppressResult: this.pendingResultReveal });
       this.lastHudHash = hudHash;
     }
   }
@@ -197,10 +199,16 @@ export class FightScene extends Phaser.Scene {
   private playDashFxForNewActions(snapshot: GameSnapshot) {
     if (snapshot.player.visualActionSerial !== this.lastPlayerVisualSerial) {
       this.lastPlayerVisualSerial = snapshot.player.visualActionSerial;
+      if (snapshot.player.visualActionId) {
+        playSfx(this, sfxForAttack(snapshot.player.visualActionId), 0.72);
+      }
       this.playDashBurst(snapshot.player.position.x, snapshot.player.position.y, 0x7cf7ff, snapshot.player.facing);
     }
     if (snapshot.enemy.visualActionSerial !== this.lastEnemyVisualSerial) {
       this.lastEnemyVisualSerial = snapshot.enemy.visualActionSerial;
+      if (snapshot.enemy.visualActionId) {
+        playSfx(this, sfxForAttack(snapshot.enemy.visualActionId), 0.72);
+      }
       this.playDashBurst(snapshot.enemy.position.x, snapshot.enemy.position.y, 0xff4d8d, snapshot.enemy.facing);
     }
   }
@@ -249,6 +257,110 @@ export class FightScene extends Phaser.Scene {
     this.time.delayedCall(isKick ? 130 : 90, () => this.fx.clear());
   }
 
+  private playFinalBlowFx(hit: HitEvent, snapshot: GameSnapshot) {
+    const defender = hit.defenderId === "player" ? snapshot.player : snapshot.enemy;
+    if (defender.hp > 0 || this.finalBlowActive) {
+      return;
+    }
+
+    this.finalBlowActive = true;
+    this.pendingResultReveal = true;
+    this.combatTimeScale = 0.08;
+    const attacker = hit.attackerId === "player" ? snapshot.player : snapshot.enemy;
+    this.spawnFinalBlowOverlay(hit, attacker.position.x, attacker.position.y);
+    this.cameras.main.flash(110, 255, 243, 176, false);
+    this.cameras.main.shake(120, 0.004);
+    this.cameras.main.pan(attacker.position.x + attacker.facing * 36, attacker.position.y - 150, 120, "Cubic.easeOut");
+    this.cameras.main.zoomTo(1.46, 120, "Back.easeOut");
+
+    this.time.delayedCall(120, () => {
+      this.combatTimeScale = 0.28;
+      this.cameras.main.shake(720, 0.009);
+      this.cameras.main.pan(attacker.position.x + attacker.facing * 92, attacker.position.y - 132, 720, "Sine.easeInOut");
+      this.cameras.main.zoomTo(1.58, 720, "Cubic.easeInOut");
+    });
+    this.time.delayedCall(820, () => {
+      this.combatTimeScale = 0.42;
+      this.cameras.main.flash(180, 255, 255, 255, false);
+      this.cameras.main.shake(180, 0.02);
+    });
+    this.time.delayedCall(1280, () => this.resetFinalBlowFx());
+  }
+
+  private spawnFinalBlowOverlay(hit: HitEvent, attackerX: number, attackerY: number) {
+    this.clearFinalBlowOverlay();
+    const color = hit.attackerId === "player" ? 0x7cf7ff : 0xff4d8d;
+    const overlay = this.add.graphics().setDepth(80).setScrollFactor(0);
+    overlay.fillStyle(0x02040a, 0.42);
+    overlay.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+    overlay.fillStyle(color, 0.2);
+    overlay.fillEllipse(attackerX, attackerY - 145, 360, 520);
+
+    const text = this.add
+      .text(GAME_WIDTH / 2, 118, "FINAL STRIKE", {
+        color: "#fff3b0",
+        fontFamily: "Trebuchet MS, Arial",
+        fontSize: "54px",
+        fontStyle: "900",
+        stroke: "#210817",
+        strokeThickness: 7
+      })
+      .setOrigin(0.5)
+      .setDepth(81)
+      .setScrollFactor(0)
+      .setShadow(0, 0, "#ff4d8d", 18, true, true);
+
+    this.finalBlowFx = [overlay, text];
+    this.tweens.add({ targets: text, scaleX: 1.12, scaleY: 1.12, duration: 140, yoyo: true, ease: "Back.easeOut" });
+    this.tweens.add({ targets: overlay, alpha: 0.18, duration: 740, delay: 160, ease: "Cubic.easeIn" });
+  }
+
+  private resetFinalBlowFx() {
+    this.combatTimeScale = 1;
+    this.finalBlowActive = false;
+    this.clearFinalBlowOverlay();
+    this.cameras.main.pan(GAME_WIDTH / 2, GAME_HEIGHT / 2, 180, "Cubic.easeOut");
+    this.cameras.main.zoomTo(1, 180, "Cubic.easeOut");
+    if (this.pendingResultReveal) {
+      this.pendingResultReveal = false;
+      this.lastHudHash = "";
+      const snapshot = this.simulation.getSnapshot();
+      this.saveResultIfNeeded(snapshot);
+      this.renderAll(snapshot);
+    }
+  }
+
+  private clearFinalBlowOverlay() {
+    this.finalBlowFx.forEach((item) => item.destroy());
+    this.finalBlowFx = [];
+  }
+
+  private playEnemyEvadeFx(snapshot: GameSnapshot) {
+    if (snapshot.feedback?.label !== "Enemy Evade" || snapshot.feedback.atMs === this.lastEnemyDodgeAt) {
+      return;
+    }
+
+    this.lastEnemyDodgeAt = snapshot.feedback.atMs;
+    const evade = this.add.graphics().setDepth(39);
+    const x = snapshot.enemy.position.x;
+    const y = snapshot.enemy.position.y;
+    evade.lineStyle(4, 0xfff3b0, 0.8);
+    for (let i = 0; i < 7; i += 1) {
+      const offsetY = -176 + i * 28;
+      evade.lineBetween(x - 14 - i * 6, y + offsetY, x - 112 - i * 10, y + offsetY + Phaser.Math.Between(-12, 12));
+    }
+    evade.fillStyle(0xff4d8d, 0.22);
+    evade.fillEllipse(x - 42, y - 110, 168, 210);
+    this.tweens.add({
+      targets: evade,
+      alpha: 0,
+      x: 34,
+      duration: 260,
+      ease: "Cubic.easeOut",
+      onComplete: () => evade.destroy()
+    });
+  }
+
   private playFeedbackSfx(snapshot: GameSnapshot) {
     if (!snapshot.feedback || snapshot.feedback.atMs === this.lastFeedbackAt) {
       return;
@@ -258,23 +370,19 @@ export class FightScene extends Phaser.Scene {
 
     switch (snapshot.feedback.kind) {
       case "wrong":
-        this.beep(140, 0.045, 0.04);
+        playSfx(this, "wrong", 0.72);
         break;
       case "complete":
-        this.beep(540, 0.055, 0.035);
         break;
       case "dodge":
-        this.beep(760, 0.07, 0.04);
         break;
       case "skill":
-        this.beep(880, 0.1, 0.05);
+        playSfx(this, "skill", 0.82);
         break;
       case "hit":
       case "ko":
-        this.beep(snapshot.feedback.kind === "ko" ? 92 : 190, 0.09, 0.06);
         break;
       default:
-        this.beep(360, 0.025, 0.018);
     }
   }
 
@@ -287,6 +395,8 @@ export class FightScene extends Phaser.Scene {
     }
 
     this.lastSavedRoundState = snapshot.roundState;
+    playSfx(this, snapshot.roundState === "won" ? "victory" : "defeat", 0.86);
+
     if (snapshot.roundState === "won") {
       this.bestCompletedLevel = Math.max(this.bestCompletedLevel, snapshot.level.id);
     }
@@ -300,28 +410,8 @@ export class FightScene extends Phaser.Scene {
     });
   }
 
-  private beep(frequency: number, durationSeconds: number, gainValue: number) {
-    const win = window as Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext };
-    const AudioContextCtor = win.AudioContext ?? win.webkitAudioContext;
-    if (!AudioContextCtor) {
-      return;
-    }
-
-    const context = new AudioContextCtor();
-    const oscillator = context.createOscillator();
-    const gain = context.createGain();
-    oscillator.frequency.value = frequency;
-    oscillator.type = "triangle";
-    gain.gain.setValueAtTime(gainValue, context.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + durationSeconds);
-    oscillator.connect(gain);
-    gain.connect(context.destination);
-    oscillator.start();
-    oscillator.stop(context.currentTime + durationSeconds);
-    oscillator.addEventListener("ended", () => context.close());
-  }
-
   private shutdown() {
+    this.clearFinalBlowOverlay();
     this.input.keyboard?.off("keydown", this.onKeyDown, this);
     this.playerRenderer?.destroy();
     this.enemyRenderer?.destroy();
@@ -338,6 +428,28 @@ function accuracy(snapshot: GameSnapshot) {
     return 100;
   }
   return Math.round((snapshot.metrics.correctChars / total) * 100);
+}
+
+function createHudHash(snapshot: GameSnapshot) {
+  return JSON.stringify({
+    prompts: snapshot.prompts,
+    metrics: snapshot.metrics,
+    combo: snapshot.combo,
+    skill: snapshot.skill,
+    enemySkill: snapshot.enemySkill,
+    hp: [snapshot.player.hp, snapshot.enemy.hp],
+    state: snapshot.roundState,
+    countdown: Math.ceil(snapshot.countdownMs / 200),
+    enemyTelegraph: Math.ceil(snapshot.enemyTelegraphMs / 200),
+    enemyCooldown: Math.floor(snapshot.enemyAttackClockMs / 50),
+    incoming: snapshot.enemyIncomingAttackId,
+    debug: snapshot.debugEnabled,
+    level: snapshot.level,
+    feedback: snapshot.feedback,
+    playerState: snapshot.player.state,
+    enemyState: snapshot.enemy.state,
+    lastHit: snapshot.lastHit?.atMs
+  });
 }
 
 function arenaColors(theme: string) {

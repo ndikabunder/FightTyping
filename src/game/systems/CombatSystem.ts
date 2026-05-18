@@ -1,11 +1,7 @@
 import { attacks } from "../content/attacks";
 import { hitboxes } from "../content/hitboxes";
+import { combatRules } from "../content/fightRules";
 import type { ActionId, Fighter, HitEvent, Rect } from "../types";
-
-const MIN_X = 250;
-const MAX_X = 1030;
-const MAX_DUEL_SPACING = 172;
-const HITSTUN_SLIDE_MS = 420;
 
 export class CombatSystem {
   getAttack(actionId: ActionId) {
@@ -46,10 +42,10 @@ export class CombatSystem {
       const nextX = fighter.position.x + fighter.velocity.x * (deltaMs / 1000);
       const decayedVelocity = fighter.velocity.x * 0.88;
 
-      if (elapsed >= HITSTUN_SLIDE_MS) {
+      if (elapsed >= combatRules.hitstunSlideMs) {
         return {
           ...fighter,
-          position: { ...fighter.position, x: clamp(nextX, MIN_X, MAX_X) },
+          position: { ...fighter.position, x: clamp(nextX, combatRules.minX, combatRules.maxX) },
           velocity: { x: 0, y: 0 },
           state: "idle",
           stateElapsedMs: 0
@@ -58,7 +54,7 @@ export class CombatSystem {
 
       return {
         ...fighter,
-        position: { ...fighter.position, x: clamp(nextX, MIN_X, MAX_X) },
+        position: { ...fighter.position, x: clamp(nextX, combatRules.minX, combatRules.maxX) },
         velocity: { x: Math.abs(decayedVelocity) < 2 ? 0 : decayedVelocity, y: 0 },
         stateElapsedMs: elapsed
       };
@@ -132,7 +128,7 @@ export class CombatSystem {
     const nextAttacker = { ...attacker, hasHitThisAttack: true };
     const rawTargetX = defender.position.x + knockDirection * attack.knockback;
     const targetX = clampToDuelSpacing(rawTargetX, nextAttacker.position.x, knockDirection);
-    const knockbackVelocityX = ((targetX - defender.position.x) / HITSTUN_SLIDE_MS) * 1000;
+    const knockbackVelocityX = ((targetX - defender.position.x) / combatRules.hitstunSlideMs) * 1000;
 
     return {
       attacker: nextAttacker,
@@ -147,6 +143,30 @@ export class CombatSystem {
       },
       hit
     };
+  }
+
+  wouldHit(attacker: Fighter, defender: Fighter) {
+    if (
+      attacker.state !== "attack_active" ||
+      !attacker.activeAttackId ||
+      attacker.hasHitThisAttack ||
+      defender.state === "ko" ||
+      defender.state === "knockdown"
+    ) {
+      return false;
+    }
+
+    const windows = hitboxes[attacker.activeAttackId].activeWindows;
+    const localTime = attacker.stateElapsedMs;
+    const activeWindow = windows.find((window) => localTime >= window.fromMs && localTime <= window.toMs);
+
+    if (!activeWindow) {
+      return false;
+    }
+
+    const attackBox = toWorldBox(activeWindow.box, attacker);
+    const hurtbox = toWorldBox(defender.hurtbox, defender);
+    return intersects(attackBox, hurtbox);
   }
 }
 
@@ -173,13 +193,13 @@ function clamp(value: number, min: number, max: number) {
 }
 
 function clampToDuelSpacing(rawDefenderX: number, attackerX: number, knockDirection: number) {
-  const arenaClamped = clamp(rawDefenderX, MIN_X, MAX_X);
-  const maxX = attackerX + MAX_DUEL_SPACING;
-  const minX = attackerX - MAX_DUEL_SPACING;
+  const arenaClamped = clamp(rawDefenderX, combatRules.minX, combatRules.maxX);
+  const maxX = attackerX + combatRules.maxDuelSpacing;
+  const minX = attackerX - combatRules.maxDuelSpacing;
 
   if (knockDirection > 0) {
-    return clamp(arenaClamped, attackerX + 92, maxX);
+    return clamp(arenaClamped, attackerX + combatRules.minDuelSpacing, maxX);
   }
 
-  return clamp(arenaClamped, minX, attackerX - 92);
+  return clamp(arenaClamped, minX, attackerX - combatRules.minDuelSpacing);
 }

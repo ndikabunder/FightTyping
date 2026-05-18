@@ -23,7 +23,10 @@ export const attacks: Record<ActionId, AttackData> = {
     recoveryMs: 190,
     range: 62,
     hitstunMs: 260,
-    knockback: 28
+    knockback: 28,
+    effect: {
+      comboGain: 2
+    }
   },
   "attack.kick.right": {
     id: "attack.kick.right",
@@ -47,6 +50,9 @@ export const attacks: Record<ActionId, AttackData> = {
     recoveryMs: 260,
     range: 86,
     hitstunMs: 380,
-    knockback: 34
+    knockback: 34,
+    effect: {
+      enemyDelayMs: 520
+    }
   }
 };

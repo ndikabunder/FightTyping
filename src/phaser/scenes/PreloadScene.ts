@@ -1,18 +1,6 @@
 import Phaser from "phaser";
-
-const PLAYER_SPRITESHEET_FRAME = {
-  frameWidth: 768,
-  frameHeight: 448
-} as const;
-
-const playerSpritesheets = {
-  idle: "/assets/images/player/Idle.png",
-  dash: "/assets/images/player/Dash.png",
-  punchRight: "/assets/images/player/PukulTanganKanan.png",
-  punchLeft: "/assets/images/player/PukulTanganKiri.png",
-  kickRight: "/assets/images/player/TendangKakiKanan.png",
-  kickLeft: "/assets/images/player/TendangKakiKiri.png"
-} as const;
+import { audioAssets, audioKey } from "../audio/GameAudio";
+import { playerSpritesheetFrame, playerSpritesheets } from "../assets/playerSpritesheets";
 
 export class PreloadScene extends Phaser.Scene {
   constructor() {
@@ -21,7 +9,11 @@ export class PreloadScene extends Phaser.Scene {
 
   preload() {
     Object.entries(playerSpritesheets).forEach(([key, url]) => {
-      this.load.spritesheet(`player.${key}`, url, PLAYER_SPRITESHEET_FRAME);
+      this.load.spritesheet(`player.${key}`, url, playerSpritesheetFrame);
+    });
+
+    Object.entries(audioAssets).forEach(([key, url]) => {
+      this.load.audio(audioKey(key as keyof typeof audioAssets), url);
     });
   }
 

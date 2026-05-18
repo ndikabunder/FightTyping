@@ -5,6 +5,7 @@ export interface TypingResult {
   metrics: TypingMetrics;
   completedPrompt: PromptState | null;
   wrong: boolean;
+  wrongPromptId: string | null;
 }
 
 export function createTypingMetrics(): TypingMetrics {
@@ -29,11 +30,15 @@ export class TypingSystem {
     this.promptStartedAtMs = 0;
   }
 
+  hasLockedPrompt() {
+    return this.lockedPromptId !== null;
+  }
+
   handleKey(prompts: PromptState[], metrics: TypingMetrics, key: string, nowMs: number): TypingResult {
     const char = normalizeKey(key);
 
     if (!char) {
-      return { prompts, metrics, completedPrompt: null, wrong: false };
+      return { prompts, metrics, completedPrompt: null, wrong: false, wrongPromptId: null };
     }
 
     const nextMetrics = { ...metrics, keystrokes: metrics.keystrokes + 1 };
@@ -47,7 +52,8 @@ export class TypingSystem {
         prompts: markWrong(prompts),
         metrics: nextMetrics,
         completedPrompt: null,
-        wrong: true
+        wrong: true,
+        wrongPromptId: null
       };
     }
 
@@ -66,7 +72,8 @@ export class TypingSystem {
         ),
         metrics: nextMetrics,
         completedPrompt: null,
-        wrong: true
+        wrong: true,
+        wrongPromptId: activePrompt.id
       };
     }
 
@@ -96,7 +103,8 @@ export class TypingSystem {
       }),
       metrics: nextMetrics,
       completedPrompt: completed ? completedPrompt : null,
-      wrong: false
+      wrong: false,
+      wrongPromptId: null
     };
   }
 

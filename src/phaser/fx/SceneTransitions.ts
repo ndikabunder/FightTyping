@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { playTransitionSfx } from "../audio/GameAudio";
 import { GAME_HEIGHT, GAME_WIDTH } from "../config";
 
 interface SlashTransitionOptions {
@@ -8,6 +9,8 @@ interface SlashTransitionOptions {
 }
 
 export function playSlashTransition(scene: Phaser.Scene, options: SlashTransitionOptions) {
+  playTransitionSfx(scene);
+
   const accent = options.accent ?? 0xfff3b0;
   const overlay = scene.add.graphics().setDepth(200);
   const leftSlash = scene.add.rectangle(-GAME_WIDTH * 0.42, GAME_HEIGHT / 2, GAME_WIDTH * 0.74, GAME_HEIGHT * 1.55, 0x7cf7ff, 0.88).setDepth(201);

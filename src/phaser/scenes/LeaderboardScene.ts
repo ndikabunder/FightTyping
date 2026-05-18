@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { clearLeaderboard, formatTime, readLeaderboard } from "../../game/systems/LeaderboardStore";
 import { playSlashTransition } from "../fx/SceneTransitions";
 import { GAME_HEIGHT, GAME_WIDTH } from "../config";
+import { ensureBgm } from "../audio/GameAudio";
 
 export class LeaderboardScene extends Phaser.Scene {
   private transitioning = false;
@@ -11,6 +12,7 @@ export class LeaderboardScene extends Phaser.Scene {
   }
 
   create() {
+    ensureBgm(this);
     this.transitioning = false;
     this.input.enabled = true;
     this.createBackground();
@@ -27,7 +29,7 @@ export class LeaderboardScene extends Phaser.Scene {
     const entries = readLeaderboard();
     if (entries.length === 0) {
       this.add
-        .text(GAME_WIDTH / 2, 320, "Belum ada run tersimpan.", {
+        .text(GAME_WIDTH / 2, 320, "No saved runs yet.", {
           color: "#e8fbff",
           fontFamily: "Trebuchet MS, Arial",
           fontSize: "24px",

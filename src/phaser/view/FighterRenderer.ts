@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import type { ActionId, Fighter, FighterState } from "../../game/types";
+import type { ActionId, Fighter, FighterState, GameSnapshot } from "../../game/types";
 
 type FighterPalette = {
   core: number;
@@ -38,10 +38,15 @@ const AURA_RING_Y = -232;
 const PLAYER_DASH_ANIMATION_MS = 170;
 const PLAYER_ATTACK_ANIMATION_MS = 760;
 const PLAYER_FRAME_MS = 80;
+const SPECIAL_FRAME_MS = 92;
+const SPECIAL_ANIMATION_MS = 1400;
 
 const fighterTextureKeys: Record<string, string> = {
   idle: "player.idle",
   dash: "player.dash",
+  skill: "player.skill",
+  death: "player.death",
+  victory: "player.victory",
   punchRight: "player.punchRight",
   punchLeft: "player.punchLeft",
   kickRight: "player.kickRight",
@@ -53,7 +58,6 @@ export class FighterRenderer {
   private readonly aura: Phaser.GameObjects.Graphics;
   private readonly sprite: Phaser.GameObjects.Sprite | null;
   private readonly wire: Phaser.GameObjects.Graphics;
-  private readonly label: Phaser.GameObjects.Text;
   private readonly palette: FighterPalette;
   private readonly pose = { ...idlePose };
   private lastState: FighterState = "idle";
@@ -66,8 +70,14 @@ export class FighterRenderer {
   private visualAttackStartedAtMs = 0;
   private visualDashUntilMs = 0;
   private visualAttackUntilMs = 0;
+  private specialAnimation: "skill" | null = null;
+  private specialStartedAtMs = 0;
+  private specialUntilMs = 0;
+  private lastSkillFeedbackAt = -1;
+  private outcomeAnimation: "victory" | "death" | null = null;
+  private outcomeStartedAtMs = 0;
 
-  constructor(private readonly scene: Phaser.Scene, fighter: Fighter, _baseColor: number, name: string) {
+  constructor(private readonly scene: Phaser.Scene, fighter: Fighter, _baseColor: number, _name: string) {
     this.palette = palettes[fighter.id] ?? palettes.player;
     this.container = scene.add.container(fighter.position.x, fighter.position.y).setDepth(12);
     this.aura = scene.add.graphics();
@@ -77,24 +87,15 @@ export class FighterRenderer {
       .setDisplaySize(FIGHTER_DISPLAY_WIDTH, FIGHTER_DISPLAY_HEIGHT)
       .setDepth(1);
     this.wire = scene.add.graphics();
-    this.label = scene.add
-      .text(0, -266, name, {
-        color: fighter.id === "player" ? "#bffcff" : "#ffd1e5",
-        fontFamily: "Trebuchet MS, Arial",
-        fontSize: "18px",
-        fontStyle: "700"
-      })
-      .setOrigin(0.5)
-      .setShadow(0, 0, fighter.id === "player" ? "#67e8f9" : "#ff4d8d", 10, true, true);
-
-    this.container.add([this.aura, this.sprite, this.wire, this.label]);
+    this.container.add([this.aura, this.sprite, this.wire]);
     this.sync(fighter);
   }
 
-  sync(fighter: Fighter) {
+  sync(fighter: Fighter, roundState: GameSnapshot["roundState"] = "fighting", skillFeedbackAt = -1, suppressOutcome = false) {
     this.container.setPosition(fighter.position.x, fighter.position.y);
     this.container.setScale(fighter.facing, 1);
-    this.syncSpriteAnimation(fighter);
+    this.updateSpecialAnimation(fighter, skillFeedbackAt);
+    this.syncSpriteAnimation(fighter, roundState, suppressOutcome);
 
     if (fighter.state !== this.lastState || fighter.state === "attack_active" || fighter.state === "attack_startup") {
       this.playState(fighter);
@@ -115,13 +116,6 @@ export class FighterRenderer {
     Object.assign(this.pose, idlePose);
 
     if (fighter.state === "ko") {
-      this.scene.tweens.add({
-        targets: this.container,
-        angle: fighter.id === "player" ? -72 : 72,
-        y: fighter.position.y + 22,
-        duration: 360,
-        ease: "Cubic.easeOut"
-      });
       return;
     }
 
@@ -148,13 +142,13 @@ export class FighterRenderer {
     }
   }
 
-  private syncSpriteAnimation(fighter: Fighter) {
+  private syncSpriteAnimation(fighter: Fighter, roundState: GameSnapshot["roundState"], suppressOutcome: boolean) {
     if (!this.sprite) {
       return;
     }
 
     this.updateAttackSequence(fighter);
-    const visualFrame = this.getVisualFrame(fighter);
+    const visualFrame = this.getVisualFrame(fighter, this.getOutcome(fighter, roundState, suppressOutcome));
     if (visualFrame.textureKey !== this.lastSpriteTextureKey) {
       this.sprite.setTexture(visualFrame.textureKey);
       this.lastSpriteTextureKey = visualFrame.textureKey;
@@ -166,6 +160,16 @@ export class FighterRenderer {
     this.sprite.setTintMode(Phaser.TintModes.FILL);
     this.sprite.setAlpha(fighter.id === "player" ? 0.86 : 0.82);
     this.wire.setVisible(false);
+  }
+
+  private updateSpecialAnimation(fighter: Fighter, skillFeedbackAt: number) {
+    if (fighter.id !== "player" || skillFeedbackAt < 0 || skillFeedbackAt === this.lastSkillFeedbackAt) {
+      return;
+    }
+    this.lastSkillFeedbackAt = skillFeedbackAt;
+    this.specialAnimation = "skill";
+    this.specialStartedAtMs = this.scene.time.now;
+    this.specialUntilMs = this.scene.time.now + SPECIAL_ANIMATION_MS;
   }
 
   private updateAttackSequence(fighter: Fighter) {
@@ -193,8 +197,38 @@ export class FighterRenderer {
     }
   }
 
-  private getVisualFrame(fighter: Fighter): { textureKey: string; frame: number } {
+  private getVisualFrame(fighter: Fighter, outcome: "victory" | "death" | null = null): { textureKey: string; frame: number } {
     const nowMs = this.scene.time.now;
+
+    if (outcome !== this.outcomeAnimation) {
+      this.outcomeAnimation = outcome;
+      this.outcomeStartedAtMs = nowMs;
+    }
+
+    if (outcome === "victory") {
+      return {
+        textureKey: fighterTextureKeys.victory,
+        frame: this.loopFrame(nowMs - this.outcomeStartedAtMs, 0, PLAYER_LAST_FILLED_FRAME, SPECIAL_FRAME_MS)
+      };
+    }
+
+    if (outcome === "death") {
+      return {
+        textureKey: fighterTextureKeys.death,
+        frame: this.clampedFrame(nowMs - this.outcomeStartedAtMs, 0, PLAYER_LAST_FILLED_FRAME, SPECIAL_FRAME_MS)
+      };
+    }
+
+    if (this.specialAnimation && nowMs < this.specialUntilMs) {
+      return {
+        textureKey: fighterTextureKeys.skill,
+        frame: this.clampedFrame(nowMs - this.specialStartedAtMs, 0, PLAYER_LAST_FILLED_FRAME, SPECIAL_FRAME_MS)
+      };
+    }
+
+    if (this.specialAnimation && nowMs >= this.specialUntilMs) {
+      this.specialAnimation = null;
+    }
 
     if (this.visualAttackId && this.scene.time.now < this.visualDashUntilMs) {
       return {
@@ -228,6 +262,19 @@ export class FighterRenderer {
       textureKey: fighterTextureKeys.idle,
       frame: this.loopFrame(this.scene.time.now, 0, PLAYER_LAST_FILLED_FRAME, 125)
     };
+  }
+
+  private getOutcome(fighter: Fighter, roundState: GameSnapshot["roundState"] = "fighting", suppressOutcome = false) {
+    if (fighter.state === "ko") {
+      return "death";
+    }
+    if (suppressOutcome) {
+      return null;
+    }
+    if (fighter.id === "player" && roundState === "won") {
+      return "victory";
+    }
+    return null;
   }
 
   private getAttackTextureKey(actionId: ActionId) {

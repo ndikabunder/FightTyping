@@ -1,11 +1,24 @@
+## Update Implementasi Polish Terbaru - 2026-05-18
+
+- Tambah polish outcome fighter: `death.png` langsung dimainkan saat KO, dan `victory.png` dipakai untuk pose menang player.
+- Tambah polish skill visual dengan `skill.png` saat player mengeksekusi `Neon Break`.
+- Quest level 3 dipermudah menjadi `Combo x3` agar progression dari combo unlock skill terasa natural.
+
 ## Update Implementasi Polish Terbaru - 2026-05-14
 
+- Sinkronisasi working tree: polish visual/audio/UI dari code modified/untracked sudah dicatat ulang di dokumen ini.
 - Intro awal, menu transition, level transition, leaderboard transition, dan result transition sudah memberi presentasi neon arcade yang lebih hidup.
 - Keyboard-only flow sudah tersedia di menu, leaderboard, dan result panel; hover/focus button juga sudah dipoles.
 - Combo feedback dibuat ulang agar reward lebih jelas: `COMBO xN` tampil di bawah objective panel, tidak flicker, dan dianimasikan manual saat combo bertambah.
 - Player skill level 3+ menambah momen power spike: progress bar dari combo 3x, panel dua kata, lalu `Skill x2`.
-- Enemy skill level 6+ menambah tekanan mid-game: cooldown lebih lambat dari attack biasa tapi lebih berbahaya, dengan warning panel `Enemy Skill`.
-- Skill input diberi guard Shift/uppercase agar polish tidak mengganggu core typing; kata normal tidak lagi memicu skill tanpa sengaja.
+- Enemy skill level 6+ menambah tekanan mid-game: cooldown 300% dari attack biasa tapi lebih berbahaya, dengan warning panel `Enemy Skill`.
+- Skill input langsung diketik saat unlocked, sama seperti prompt attack/dodge.
+- Wrong input memberi shake pada panel aktif dan memutar `wrong.mp3`.
+- Victory/defeat memakai SFX khusus.
+- SFX runtime aktif lewat `src/phaser/audio/GameAudio.ts`: `bgm`, `typing`, `punch`, `kick`, `skill`, `transition`, `victory`, `defeat`, `wrong`.
+- Asset audio runtime berada di `public/assets/sound`; source asset masih disimpan di `assets/Sound`.
+- Player spritesheet loading dipisah ke `src/phaser/assets/playerSpritesheets.ts` agar `PreloadScene` lebih bersih.
+- Enemy nameplate ditambahkan di atas cooldown attack agar identitas lawan jelas tanpa mengganggu playfield.
 - Prompt pool Inggris diperluas dan meningkat per level sehingga game terasa lebih variatif saat replay.
 
 ## Update Implementasi Polish Terbaru - 2026-05-13
@@ -342,7 +355,7 @@ Polish tahap ini dianggap selesai bila:
 - Minimal ada feedback visual untuk correct key, wrong key, prompt complete, hit, whiff, dodge success, damage, dan KO.
 - Hitstop dan camera shake sudah berbeda antara punch dan kick.
 - Enemy cooldown punya state aman/waspada/bahaya.
-- Audio dasar tersedia dan bisa dimute.
+- Audio dasar tersedia untuk typing, punch, kick, skill, transition, victory, defeat, wrong input, dan BGM.
 - HUD tidak menutup area penting combat.
 - Semua efek dapat diturunkan atau dimatikan untuk aksesibilitas/debug.
 - Build dan test tetap pass.

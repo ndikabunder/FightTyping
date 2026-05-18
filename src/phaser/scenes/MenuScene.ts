@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { playSlashTransition } from "../fx/SceneTransitions";
 import { GAME_HEIGHT, GAME_WIDTH } from "../config";
+import { ensureBgm } from "../audio/GameAudio";
 
 export class MenuScene extends Phaser.Scene {
   private transitioning = false;
@@ -10,6 +11,7 @@ export class MenuScene extends Phaser.Scene {
   }
 
   create() {
+    ensureBgm(this);
     this.transitioning = false;
     this.input.enabled = true;
     this.createBackground();

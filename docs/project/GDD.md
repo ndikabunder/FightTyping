@@ -1,15 +1,33 @@
+## Update Implementasi Terbaru - 2026-05-18
+
+- Spritesheet `skill.png`, `death.png`, dan `victory.png` sudah masuk ke manifest player dan diload Phaser dari `public/assets/images/player`.
+- Animasi death diprioritaskan saat `ko`, sehingga muncul langsung ketika serangan terakhir mengenai target.
+- Animasi victory player tampil sebagai outcome menang setelah final strike selesai.
+- Objective level 3 diubah dari `Land 1 kick` menjadi `Keep combo x3` / progress `Combo x3` target 3.
+
 ## Update Implementasi Terbaru - 2026-05-14
 
+- Sinkronisasi working tree: perubahan code modified/untracked sekarang terdokumentasi, termasuk `fightRules`, audio helper, player spritesheet manifest, asset SFX, dan copy runtime `public/assets`.
 - Flow scene sekarang lengkap: `BootScene -> PreloadScene -> IntroScene -> MenuScene -> FightScene`, dengan `LeaderboardScene` dari menu.
 - Intro awal dan transisi antar menu, leaderboard, level, victory, dan defeat memakai slash/flash neon agar perpindahan scene terasa arcade.
 - Menu dan leaderboard mendukung keyboard-only shortcut: `S`/`Enter` untuk start, `L` untuk leaderboard, `B`/`Esc` untuk back, `C` untuk clear.
 - Semua button punya hover/focus state agar nyaman dipakai dengan mouse maupun keyboard.
 - Combo system dibangun ulang sebagai `ComboSystem` terpisah. Combo naik saat prompt sukses, pecah saat miss/hit tertentu, punya tier, best combo, serial event, dan feedback `COMBO xN` di bawah objective panel.
-- Level 3+ membuka player skill: panel dua kata muncul di bawah kaki player, terkunci sampai combo 3x, punya progress bar, lalu aktif sebagai `Skill x2`.
-- Skill player hanya bisa mulai diketik saat unlocked dan harus diawali dengan huruf besar/Shift agar tidak aktif tanpa sengaja ketika kata normal mengandung huruf yang sama.
+- Level 3+ membuka player skill `Neon Break`: panel dua kata muncul di bawah kaki player, terkunci sampai combo 3x, punya progress bar, lalu aktif sebagai damage 2x dan reset tekanan enemy.
+- Skill player langsung diketik seperti prompt lain saat unlocked.
 - Kata skill player dipilih dari pool Inggris secara dinamis per level, bukan selalu `power strike`.
-- Level 6+ membuka enemy skill: panel berada di bawah kaki enemy, cooldown 150% dari cooldown attack normal, damage 2x, dan UI hanya menampilkan `Enemy Skill` tanpa membocorkan jenis serangan.
+- Level 6+ membuka enemy skill: panel berada di bawah kaki enemy, cooldown 300% dari cooldown attack normal, damage 2x, dan UI hanya menampilkan `Enemy Skill` tanpa membocorkan jenis serangan.
 - Prompt pool diperluas menjadi `level1` sampai `level10`, semuanya bahasa Inggris, dan semakin panjang/sulit seiring naik level.
+- Wrong input memberi shake pada panel aktif dan SFX `wrong.mp3`.
+- Victory/defeat punya SFX khusus.
+- Tuning rule combat, dodge, enemy skill, hitstop, dan scoring dipusatkan di `src/game/content/fightRules.ts`.
+- Limb punya fungsi gameplay: punch kanan cepat, punch kiri memberi extra combo, kick kanan untuk damage/range, kick kiri memberi stagger/delay enemy.
+- Enemy archetype memakai damage, cooldown, dodge, dan feint chance agar Heavy, Tempo, Trickster, dan Boss terasa beda.
+- HUD menampilkan enemy nameplate di atas panel cooldown attack supaya archetype lawan terbaca tanpa membuka objective panel.
+- Tiap level punya objective kecil dengan progress HUD dan bonus score.
+- Pacing wave menaikkan pressure setiap fight berjalan lama; boss memakai phase pressure sendiri.
+- `CombatSystem.wouldHit()` dipakai untuk membaca ancaman aktif sebelum enemy dodge/feint sehingga defense enemy lebih data-driven.
+- `TypingSystem` punya guard khusus agar skill prompt hanya menerima input saat skill unlocked/aktif.
 
 ## Update Implementasi Terbaru - 2026-05-13
 
@@ -75,7 +93,7 @@ Tujuan desain: typing tidak terasa seperti minigame terpisah, tetapi menjadi inp
 
 ### Current Prototype State
 
-Prototype Phaser 4 sudah berjalan dengan placeholder neon wireframe fighter, DOM HUD, prompt attack dekat limb player, prompt dodge di atas player, cooldown bar enemy di atas nama enemy, dash-in attack movement, combat data-driven, debug hitbox/hurtbox, unit tests, dan browser smoke test.
+Prototype Phaser 4 sudah berjalan dengan spritesheet fighter, DOM HUD, prompt attack dekat limb player, prompt dodge di atas player, cooldown bar enemy di atas nama enemy, dash-in attack movement, combat data-driven, SFX dasar, debug hitbox/hurtbox, unit tests, dan browser smoke test.
 
 ## 2. Referensi Riset
 
@@ -175,8 +193,8 @@ Contoh action map:
 | --- | --- | --- | --- |
 | Tangan kanan | dekat tangan kanan player | `attack.punch.right` | cepat, damage kecil |
 | Tangan kiri | dekat tangan kiri player | `attack.punch.left` | cepat, bisa combo |
-| Kaki kanan | dekat kaki kanan player | `attack.kick.right` | lebih lambat, range jauh |
-| Kaki kiri | dekat kaki kiri player | `attack.kick.left` | sweep/low attack |
+| Kaki kanan | dekat kaki kanan player | `attack.kick.right` | damage lebih besar, range jauh |
+| Kaki kiri | dekat kaki kiri player | `attack.kick.left` | slow/stagger enemy pressure |
 | Dodge | atas player | `defense.dodge.back` | mundur, kebal singkat, kembali setelah 0.5s |
 
 ## 7. Limb Attack Design
@@ -196,7 +214,8 @@ Contoh action map:
 - Prompt: pendek-sedang, 4-6 huruf.
 - Damage: sedang.
 - Startup: sedang.
-- Fungsi: follow-up setelah jab.
+- Efek: memberi combo gain lebih besar.
+- Fungsi: follow-up setelah jab dan mengejar objective combo.
 
 ### Kaki Kanan
 
@@ -212,7 +231,7 @@ Contoh action map:
 - Peran: low kick/sweep.
 - Prompt: sedang, 5-8 huruf.
 - Damage: sedang.
-- Efek: slow, trip, stance break.
+- Efek: slow/stagger yang mengurangi clock attack dan skill enemy.
 - Fungsi: buka pertahanan musuh.
 
 ## 8. Typing Mechanics
@@ -606,6 +625,12 @@ export const assetManifest = {
 ```
 
 Saat asset final siap, ubah `image` dan `atlas`, bukan gameplay code.
+
+Catatan implementasi saat ini:
+
+- Player spritesheet path aktif berada di `src/phaser/assets/playerSpritesheets.ts`.
+- Audio path aktif berada di `src/phaser/audio/GameAudio.ts`.
+- Tuning gameplay aktif berada di `src/game/content/fightRules.ts`.
 
 ## 14. Placeholder Asset Plan
 

@@ -173,6 +173,90 @@ body {
   font-size: clamp(9px, 1vw, 12px);
 }
 
+.level-chip .objective-progress {
+  color: #ffd166;
+  font-weight: 900;
+}
+
+.level-chip .objective-progress.complete {
+  color: #7cf7ff;
+  text-shadow: 0 0 10px rgba(124, 247, 255, 0.72);
+}
+
+.briefing-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 18;
+  background: radial-gradient(circle at center, rgba(124, 247, 255, 0.12), rgba(5, 7, 12, 0.38) 48%, transparent 70%);
+  pointer-events: none;
+}
+
+.briefing-card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  gap: 10px;
+  min-width: min(620px, 78vw);
+  padding: 28px 38px 32px;
+  border: 2px solid rgba(124, 247, 255, 0.7);
+  background: linear-gradient(135deg, rgba(7, 18, 29, 0.92), rgba(35, 10, 48, 0.86));
+  text-align: center;
+  box-shadow: inset 0 0 28px rgba(124, 247, 255, 0.14), 0 0 42px rgba(255, 77, 141, 0.28);
+  clip-path: polygon(18px 0, calc(100% - 36px) 0, 100% 30px, 100% calc(100% - 14px), calc(100% - 14px) 100%, 36px 100%, 0 calc(100% - 30px), 0 14px);
+  animation: briefing-pop 1.8s ease both;
+}
+
+.briefing-card small {
+  color: #7cf7ff;
+  font-size: clamp(13px, 1.35vw, 17px);
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.briefing-card h1 {
+  margin: 0;
+  color: #fff3b0;
+  font-size: clamp(34px, 4.7vw, 62px);
+  text-transform: uppercase;
+  text-shadow: 0 0 18px rgba(255, 243, 176, 0.55);
+}
+
+.briefing-countdown {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 2;
+  transform: translate(-50%, -50%);
+  color: #e8fbff;
+  font-size: clamp(92px, 17vw, 228px);
+  font-weight: 900;
+  line-height: 0.92;
+  text-transform: uppercase;
+  text-shadow: 0 0 18px rgba(124, 247, 255, 0.78), 0 0 42px rgba(255, 77, 141, 0.52);
+}
+
+.briefing-card strong {
+  color: #e8fbff;
+  font-size: clamp(20px, 2.25vw, 32px);
+}
+
+.briefing-card span {
+  color: rgba(232, 251, 255, 0.76);
+  font-size: clamp(13px, 1.35vw, 17px);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+@keyframes briefing-pop {
+  0% { opacity: 0; transform: translateY(18px) scale(0.96); filter: blur(4px); }
+  18% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+  86% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-10px) scale(1.02); }
+}
+
 .combo-readout {
   z-index: 8;
   display: flex;
@@ -274,10 +358,11 @@ body {
   transform: translate(-50%, -50%) scale(1.05);
 }
 
-.prompt-card.wrong {
+.prompt-card.wrong,
+.prompt-card.wrong-shake {
   border-color: #ef476f;
   background: rgba(70, 10, 26, 0.84);
-  animation: shake 120ms linear 1;
+  animation: shake 160ms linear 1;
 }
 
 .prompt-card.completed {
@@ -322,9 +407,11 @@ body {
   animation: skill-ready-pulse 900ms ease-in-out infinite;
 }
 
-.skill-panel.wrong {
+.skill-panel.wrong,
+.skill-panel.wrong-shake {
   border-color: rgba(239, 71, 111, 0.9);
-  animation: shake 120ms linear 1;
+  background: linear-gradient(135deg, rgba(70, 10, 26, 0.92), rgba(7, 13, 25, 0.86));
+  animation: shake 170ms linear 1;
 }
 
 .skill-charge {
@@ -390,8 +477,15 @@ body {
   animation: enemy-skill-pulse 780ms ease-in-out infinite;
 }
 
+.enemy-skill-panel.warning {
+  border-color: rgba(255, 209, 102, 0.86);
+  background: linear-gradient(135deg, rgba(60, 35, 8, 0.92), rgba(34, 8, 22, 0.88));
+}
+
 .enemy-skill-panel.danger {
   border-color: rgba(255, 77, 141, 0.98);
+  background: linear-gradient(135deg, rgba(78, 8, 31, 0.94), rgba(9, 8, 18, 0.88));
+  animation: enemy-skill-danger-pulse 520ms ease-in-out infinite;
 }
 
 .enemy-skill-charge {
@@ -405,9 +499,18 @@ body {
 .enemy-skill-charge b {
   display: block;
   height: 100%;
-  background: linear-gradient(90deg, #ffd166, #ff4d8d, #e8fbff);
+  background: linear-gradient(90deg, #7cf7ff, #ffd166, #ff4d8d);
   box-shadow: 0 0 13px rgba(255, 77, 141, 0.9);
   transition: width 160ms linear;
+}
+
+.enemy-skill-panel.warning .enemy-skill-charge b {
+  background: linear-gradient(90deg, #ffd166, #ff8a4d, #ff4d8d);
+}
+
+.enemy-skill-panel.danger .enemy-skill-charge b {
+  background: linear-gradient(90deg, #ffd166, #ff4d8d, #e8fbff);
+  box-shadow: 0 0 18px rgba(255, 77, 141, 0.95), 0 0 28px rgba(255, 209, 102, 0.42);
 }
 
 .enemy-skill-panel small {
@@ -427,6 +530,56 @@ body {
   line-height: 1;
   text-transform: uppercase;
   text-shadow: 0 0 12px rgba(255, 77, 141, 0.65);
+}
+
+.enemy-nameplate {
+  position: absolute;
+  width: 184px;
+  transform: translate(-50%, -50%);
+  padding: 7px 11px 8px;
+  border: 2px solid rgba(255, 77, 141, 0.76);
+  border-radius: 4px 4px 2px 2px;
+  background: linear-gradient(135deg, rgba(43, 8, 27, 0.92), rgba(12, 6, 16, 0.88));
+  box-shadow: inset 0 0 18px rgba(255, 77, 141, 0.12), 0 0 22px rgba(255, 77, 141, 0.24), 0 10px 28px rgba(0, 0, 0, 0.4);
+  clip-path: polygon(8px 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%, 0 8px);
+  text-align: center;
+  z-index: 9;
+}
+
+.enemy-nameplate small,
+.enemy-nameplate span {
+  display: block;
+  color: rgba(255, 179, 196, 0.82);
+  font-size: clamp(8px, 0.78vw, 10px);
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.enemy-nameplate small {
+  margin-bottom: 3px;
+}
+
+.enemy-nameplate span {
+  margin-top: 3px;
+  color: rgba(232, 251, 255, 0.74);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.enemy-nameplate strong {
+  display: block;
+  color: #e8fbff;
+  font-size: clamp(12px, 1.15vw, 15px);
+  font-weight: 900;
+  line-height: 1.05;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  text-shadow: 0 0 12px rgba(255, 77, 141, 0.72);
+  white-space: nowrap;
 }
 
 .enemy-cooldown {
@@ -637,6 +790,28 @@ body {
   font-weight: 800;
 }
 
+.result-overlay .result-reason {
+  justify-self: center;
+  width: min(520px, 100%);
+  margin: 0;
+  padding: 12px 16px;
+  border: 1px solid rgba(124, 247, 255, 0.34);
+  border-radius: 4px;
+  background: linear-gradient(90deg, rgba(3, 10, 20, 0.72), rgba(17, 48, 67, 0.46));
+  color: #e8fbff;
+  font-size: clamp(14px, 1.45vw, 18px);
+  line-height: 1.25;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.result-overlay .defeat-reason {
+  border-color: rgba(239, 71, 111, 0.56);
+  background: linear-gradient(90deg, rgba(32, 6, 16, 0.76), rgba(64, 13, 30, 0.58));
+  color: #fff3b0;
+  box-shadow: inset 0 0 18px rgba(239, 71, 111, 0.14), 0 0 24px rgba(239, 71, 111, 0.18);
+}
+
 .result-actions {
   display: flex;
   justify-content: center;
@@ -741,6 +916,18 @@ body {
   }
   50% {
     box-shadow: inset 0 0 24px rgba(255, 77, 141, 0.24), 0 0 40px rgba(255, 77, 141, 0.42), 0 10px 28px rgba(0, 0, 0, 0.42);
+  }
+}
+
+@keyframes enemy-skill-danger-pulse {
+  0%,
+  100% {
+    box-shadow: inset 0 0 24px rgba(255, 77, 141, 0.24), 0 0 34px rgba(255, 77, 141, 0.42), 0 10px 28px rgba(0, 0, 0, 0.42);
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    box-shadow: inset 0 0 34px rgba(255, 77, 141, 0.42), 0 0 54px rgba(255, 77, 141, 0.68), 0 0 24px rgba(255, 209, 102, 0.36), 0 10px 28px rgba(0, 0, 0, 0.42);
+    transform: translate(-50%, -50%) scale(1.06);
   }
 }
 

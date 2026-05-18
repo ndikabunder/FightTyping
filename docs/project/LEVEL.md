@@ -1,12 +1,45 @@
+## Update Implementasi Level Terbaru - 2026-05-18
+
+- Level 3 `First Kick` sekarang memakai objective `Keep combo x3` dengan progress `Combo x3` target 3.
+- Tujuan revisi: quest awal lebih mudah dan langsung mengajarkan combo untuk unlock `Neon Break`.
+
 ## Update Implementasi Level Terbaru - 2026-05-14
 
+- Sinkronisasi working tree: perubahan level/archetype/objective/skill/pacing dari source sudah dicatat di dokumen ini.
 - Word pool level 1-10 sudah diimplementasikan sebagai pool bahasa Inggris yang makin panjang dan makin teknis.
-- Level 3 menjadi titik masuk player skill: pemain belajar menjaga combo 3x untuk membuka `Skill x2`.
-- Level 6 menjadi titik masuk enemy skill: enemy mendapat skill dengan cooldown 150% dari attack normal dan damage 2x.
+- Level 3 menjadi titik masuk player skill: pemain belajar menjaga combo 3x untuk membuka `Neon Break`.
+- Level 6 menjadi titik masuk enemy skill: enemy mendapat skill dengan cooldown 300% dari attack normal dan damage 2x.
 - Skill player memakai dua kata acak dari pool skill, sehingga tiap level tidak selalu menampilkan `power strike`.
-- Skill player sengaja butuh Shift/huruf besar untuk input pertama agar tidak mengganggu prompt attack/dodge normal.
+- Skill player langsung diketik seperti prompt lain saat unlocked.
 - Enemy skill hanya memberi warning `Enemy Skill`; jenis serangan tidak ditampilkan agar pemain membaca timing, bukan bocoran move.
+- Tiap limb punya fungsi taktis: kanan punch cepat, kiri punch combo, kanan kick damage/range, kiri kick stagger.
+- Enemy archetype sekarang berbeda lewat damage, cooldown, dodge chance, dan feint chance.
+- Tiap level punya objective kecil dengan progress HUD, misalnya combo, dodge, semua limb, Neon Break, atau phase boss.
+- Pacing wave menaikkan pressure setelah fight berjalan lama agar round 3 menit tidak datar.
+- Angka tuning level aktif berada di `src/game/content/levels.ts`; angka lintas sistem berada di `src/game/content/fightRules.ts`.
 - Shortcut level tetap `1-9` dan `0`, sementara menu/leaderboard/result sekarang bisa dipakai tanpa mouse.
+
+Objective aktif per level:
+
+- Level 1 `Warm-Up Guard`: `Hit both punches` / progress `Both punches` target 2.
+- Level 2 `Twin Jab`: `Keep combo x5` / progress `Combo x5` target 5.
+- Level 3 `First Kick`: `Keep combo x3` / progress `Combo x3` target 3.
+- Level 4 `Backstep Lesson`: `Dodge 2 attacks` / progress `Dodge x2` target 2.
+- Level 5 `Heavy Check`: `Use all limbs` / progress `All limbs` target 4.
+- Level 6 `Tempo Break`: `Trigger Neon Break` / progress `Neon Break` target 1.
+- Level 7 `Priority Drill`: `Keep combo x8` / progress `Combo x8` target 8.
+- Level 8 `Mirror Focus`: `Avoid 3 misses` / progress gagal bila miss terlalu banyak.
+- Level 9 `Pressure Mix`: `Dodge 2 heavy hits` / progress `Dodge x2` target 2.
+- Level 10 `Neon Champion`: `Reach phase 3` / progress `Reach phase 3` target 3.
+
+Archetype aktif:
+
+- `Basic Striker`: damage `0.85`, cooldown `1`, dodge `0.12`, feint `0`.
+- `Kicker`: damage `1`, cooldown `1`, dodge `0.18`, feint `0`.
+- `Tempo Fighter`: damage `0.82`, cooldown `0.82`, dodge `0.2`, feint `0`.
+- `Heavy Fighter`: damage `1.35`, cooldown `1.22`, dodge `0.08`, feint `0`.
+- `Trickster`: damage `0.95`, cooldown `0.96`, dodge `0.42`, feint `0.22`.
+- `Neon Champion`: damage `1.18`, cooldown `1`, dodge `0.28`, feint `0.08`.
 
 ## Update Implementasi Level Terbaru - 2026-05-13
 
@@ -229,6 +262,21 @@ Tujuan: klimaks run tanpa terasa tidak adil.
 | 8 | Trickster | Fokus dan akurasi | 150 | 3.4s | 0.85s | 6-8 | Kata mulai mirip, tapi tidak menipu |
 | 9 | Heavy Trickster | Tekanan campuran | 190 | 3.1s | 0.8s | 6-9 | Dodge wajib, damage tinggi |
 | 10 | Boss | Ujian penuh | 240 | 3.6s -> 2.7s | 1.1s -> 0.7s | 5-10 | 3 phase, pattern berubah tiap phase |
+
+## Objective Kecil Saat Ini
+
+| Level | Objective |
+| --- | --- |
+| 1 | Hit both punches |
+| 2 | Keep combo x5 |
+| 3 | Combo x3 |
+| 4 | Dodge 2 attacks |
+| 5 | Use all limbs |
+| 6 | Trigger Neon Break |
+| 7 | Keep combo x8 |
+| 8 | Avoid 3 misses |
+| 9 | Dodge 2 heavy hits |
+| 10 | Reach phase 3 |
 
 ## Boss Design
 

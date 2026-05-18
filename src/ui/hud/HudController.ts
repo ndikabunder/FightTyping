@@ -6,9 +6,9 @@ const LOGICAL_HEIGHT = 720;
 
 const promptOffsets = {
   leftHand: { x: -168, y: -172 },
-  rightHand: { x: 184, y: -178 },
+  rightHand: { x: 158, y: -178 },
   leftLeg: { x: -154, y: -26 },
-  rightLeg: { x: 172, y: -34 }
+  rightLeg: { x: 146, y: -34 }
 } as const;
 
 export class HudController {
@@ -27,7 +27,8 @@ export class HudController {
     window.addEventListener("keydown", this.onWindowKeyDown);
   }
 
-  render(snapshot: GameSnapshot) {
+  render(snapshot: GameSnapshot, options: { suppressResult?: boolean } = {}) {
+    const showCombatOverlays = snapshot.roundState !== "won" && snapshot.roundState !== "lost";
     this.root.innerHTML = `
       <div class="hud-bars">
         ${this.hpBar("PLAYER", snapshot.player.hp, snapshot.player.maxHp, "player")}
@@ -39,21 +40,17 @@ export class HudController {
       </div>
       <div class="level-status">
         <div class="level-chip">
-          <strong>${snapshot.level.name}</strong>
-          <span>${snapshot.level.enemyName} - ${snapshot.level.phaseLabel}</span>
+          <strong>Quest</strong>
           <small>${snapshot.level.objective}</small>
+          <small class="objective-progress ${snapshot.level.objectiveProgress.completed ? "complete" : ""}">
+            ${snapshot.level.objectiveProgress.label}: ${snapshot.level.objectiveProgress.current}/${snapshot.level.objectiveProgress.target}
+          </small>
         </div>
         ${this.comboBadge(snapshot)}
       </div>
-      <div class="prompts">
-        ${snapshot.prompts.map((prompt) => this.prompt(prompt, snapshot)).join("")}
-        ${snapshot.dodgePrompt ? this.dodgePrompt(snapshot.dodgePrompt, snapshot) : ""}
-      </div>
-      ${this.skillPanel(snapshot)}
-      ${this.enemySkillPanel(snapshot)}
-      ${this.enemyCooldown(snapshot)}
-      ${this.feedback(snapshot)}
-      ${this.resultOverlay(snapshot)}
+      ${showCombatOverlays ? this.combatOverlays(snapshot) : ""}
+      ${this.briefingOverlay(snapshot)}
+      ${options.suppressResult ? "" : this.resultOverlay(snapshot)}
     `;
     this.bindResultButtons();
     this.syncComboAnimation(snapshot);
@@ -68,6 +65,37 @@ export class HudController {
     this.root.innerHTML = "";
   }
 
+  private combatOverlays(snapshot: GameSnapshot) {
+    return `
+      <div class="prompts">
+        ${snapshot.prompts.map((prompt) => this.prompt(prompt, snapshot)).join("")}
+        ${snapshot.dodgePrompt ? this.dodgePrompt(snapshot.dodgePrompt, snapshot) : ""}
+      </div>
+      ${this.skillPanel(snapshot)}
+      ${this.enemySkillPanel(snapshot)}
+      ${this.enemyCooldown(snapshot)}
+      ${this.feedback(snapshot)}
+    `;
+  }
+
+  private briefingOverlay(snapshot: GameSnapshot) {
+    if (snapshot.roundState !== "countdown") {
+      return "";
+    }
+
+    return `
+      <div class="briefing-overlay">
+        <div class="briefing-countdown">${this.countdownValue(snapshot)}</div>
+        <div class="briefing-card">
+          <small>Quest Start</small>
+          <h1>Level ${snapshot.level.id}: ${snapshot.level.name}</h1>
+          <strong>${snapshot.level.objective}</strong>
+          <span>${snapshot.level.enemyName} - ${snapshot.level.focus}</span>
+        </div>
+      </div>
+    `;
+  }
+
   private hpBar(label: string, hp: number, maxHp: number, side: string) {
     const pct = Math.max(0, Math.min(100, (hp / maxHp) * 100));
     return `
@@ -76,6 +104,11 @@ export class HudController {
         <div class="hp-track"><div class="hp-fill" style="width:${pct}%"></div></div>
       </div>
     `;
+  }
+
+  private countdownValue(snapshot: GameSnapshot) {
+    const value = Math.max(1, Math.ceil(snapshot.countdownMs / 600));
+    return value === 1 ? "FIGHT" : `${value}`;
   }
 
   private prompt(prompt: PromptState, snapshot: GameSnapshot) {
@@ -88,8 +121,9 @@ export class HudController {
     const chars = [...prompt.text]
       .map((char, index) => `<span class="${index < typed ? "typed" : ""}">${char}</span>`)
       .join("");
+    const wrongShake = this.isWrongTarget(snapshot, prompt.id) ? "wrong-shake" : "";
     return `
-      <div class="prompt-card ${prompt.limb} ${prompt.status}" style="left:${pct(pos.x, LOGICAL_WIDTH)}%;top:${pct(pos.y, LOGICAL_HEIGHT)}%">
+      <div class="prompt-card ${prompt.limb} ${prompt.status} ${wrongShake}" style="left:${pct(pos.x, LOGICAL_WIDTH)}%;top:${pct(pos.y, LOGICAL_HEIGHT)}%">
         <small>${limbLabels[prompt.limb]}</small>
         <strong>${chars}</strong>
       </div>
@@ -99,16 +133,17 @@ export class HudController {
   private dodgePrompt(prompt: PromptState, snapshot: GameSnapshot) {
     const pos = {
       x: snapshot.player.position.x,
-      y: snapshot.player.position.y - 264
+      y: snapshot.player.position.y - 302
     };
     const typed = prompt.typed.length;
     const chars = [...prompt.text]
       .map((char, index) => `<span class="${index < typed ? "typed" : ""}">${char}</span>`)
       .join("");
 
+    const wrongShake = this.isWrongTarget(snapshot, prompt.id) ? "wrong-shake" : "";
     return `
-      <div class="prompt-card dodge ${prompt.status}" style="left:${pct(pos.x, LOGICAL_WIDTH)}%;top:${pct(pos.y, LOGICAL_HEIGHT)}%">
-        <small>Mundur</small>
+      <div class="prompt-card dodge ${prompt.status} ${wrongShake}" style="left:${pct(pos.x, LOGICAL_WIDTH)}%;top:${pct(pos.y, LOGICAL_HEIGHT)}%">
+        <small>Backstep</small>
         <strong>${chars}</strong>
       </div>
     `;
@@ -119,7 +154,7 @@ export class HudController {
     const state = pctValue >= 82 ? "danger" : pctValue >= 58 ? "warning" : "safe";
     const pos = {
       x: snapshot.enemy.position.x,
-      y: snapshot.enemy.position.y - 276
+      y: snapshot.enemy.position.y - 302
     };
     const label = snapshot.enemyIncomingAttackId ? attackLabel(snapshot.enemyIncomingAttackId) : "Enemy Attack";
 
@@ -157,10 +192,11 @@ export class HudController {
       })
       .join("<em> </em>");
 
+    const wrongShake = this.isWrongTarget(snapshot, "skill") ? "wrong-shake" : "";
     return `
-      <div class="skill-panel ${state}" style="left:${pct(pos.x, LOGICAL_WIDTH)}%;top:${pct(pos.y, LOGICAL_HEIGHT)}%">
+      <div class="skill-panel ${state} ${wrongShake}" style="left:${pct(pos.x, LOGICAL_WIDTH)}%;top:${pct(pos.y, LOGICAL_HEIGHT)}%">
         <div class="skill-charge"><b style="width:${pctValue}%"></b></div>
-        <small>${snapshot.skill.unlocked ? "Skill x2 Ready - hold Shift" : `Skill Lock ${Math.min(snapshot.combo.count, snapshot.skill.requiredCombo)}/${snapshot.skill.requiredCombo}`}</small>
+        <small>${snapshot.skill.unlocked ? "Skill x2 Ready" : `Skill Lock ${Math.min(snapshot.combo.count, snapshot.skill.requiredCombo)}/${snapshot.skill.requiredCombo}`}</small>
         <div class="skill-words">${words}</div>
       </div>
     `;
@@ -176,7 +212,7 @@ export class HudController {
       y: snapshot.enemy.position.y + 70
     };
     const pctValue = Math.max(0, Math.min(100, (snapshot.enemySkill.clockMs / snapshot.enemySkill.cooldownMs) * 100));
-    const state = pctValue >= 82 ? "danger" : snapshot.enemySkill.telegraphMs > 0 ? "warning" : "charging";
+    const state = pctValue >= 85 ? "danger" : pctValue >= 58 || snapshot.enemySkill.telegraphMs > 0 ? "warning" : "charging";
     return `
       <div class="enemy-skill-panel ${state}" style="left:${pct(pos.x, LOGICAL_WIDTH)}%;top:${pct(pos.y, LOGICAL_HEIGHT)}%">
         <div class="enemy-skill-charge"><b style="width:${pctValue}%"></b></div>
@@ -194,6 +230,13 @@ export class HudController {
     return `<div class="combat-feedback ${snapshot.feedback.kind}">${snapshot.feedback.label}</div>`;
   }
 
+  private isWrongTarget(snapshot: GameSnapshot, targetId: string) {
+    if (snapshot.feedback?.kind !== "wrong") {
+      return false;
+    }
+    return snapshot.feedback.targetId === targetId || snapshot.feedback.targetId === "all-prompts";
+  }
+
   private comboBadge(snapshot: GameSnapshot) {
     if (snapshot.combo.count <= 0) {
       return "";
@@ -208,8 +251,7 @@ export class HudController {
 
   private roundLabel(snapshot: GameSnapshot) {
     if (snapshot.roundState === "countdown") {
-      const value = Math.max(1, Math.ceil(snapshot.countdownMs / 600));
-      return value === 1 ? "FIGHT" : `${value}`;
+      return "GET READY";
     }
 
     if (snapshot.roundState === "won") {
@@ -232,7 +274,7 @@ export class HudController {
       return "";
     }
     const text = snapshot.roundState === "paused" ? "Paused" : snapshot.roundState === "won" ? "Victory" : "Defeat";
-    const sub = snapshot.roundState === "paused" ? "Press Esc to resume" : "";
+    const sub = snapshot.roundState === "paused" ? "Press Esc to resume" : snapshot.roundState === "lost" ? this.defeatReason(snapshot) : "";
     const stateClass = snapshot.roundState === "won" ? "victory" : snapshot.roundState === "lost" ? "defeat" : "paused";
     const buttons =
       snapshot.roundState === "won"
@@ -252,11 +294,23 @@ export class HudController {
             <span><small>Level</small><strong>${snapshot.level.id}</strong></span>
             <span><small>Rank</small><strong>${snapshot.level.rank}</strong></span>
           </div>
-          ${sub ? `<p>${sub}</p>` : ""}
+          ${sub ? `<p class="result-reason ${snapshot.roundState === "lost" ? "defeat-reason" : ""}">${sub}</p>` : ""}
           <div class="result-actions">${buttons}</div>
         </div>
       </div>
     `;
+  }
+
+  private defeatReason(snapshot: GameSnapshot) {
+    if (snapshot.enemy.hp <= 0 && !snapshot.level.objectiveProgress.completed) {
+      return `Quest failed · ${snapshot.level.objectiveProgress.label} ${snapshot.level.objectiveProgress.current}/${snapshot.level.objectiveProgress.target}`;
+    }
+
+    if (snapshot.player.hp <= 0) {
+      return "HP depleted · keep distance and dodge enemy attacks";
+    }
+
+    return "You lost this round.";
   }
 
   private bindResultButtons() {
@@ -380,13 +434,13 @@ function accuracy(snapshot: GameSnapshot) {
 function attackLabel(actionId: string) {
   switch (actionId) {
     case "attack.punch.right":
-      return "Tangan Kanan";
+      return "Right Hand";
     case "attack.punch.left":
-      return "Tangan Kiri";
+      return "Left Hand";
     case "attack.kick.right":
-      return "Kaki Kanan";
+      return "Right Leg";
     case "attack.kick.left":
-      return "Kaki Kiri";
+      return "Left Leg";
     default:
       return "Enemy Attack";
   }

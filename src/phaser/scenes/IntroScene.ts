@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { ensureBgm, playTransitionSfx } from "../audio/GameAudio";
 import { GAME_HEIGHT, GAME_WIDTH } from "../config";
 
 export class IntroScene extends Phaser.Scene {
@@ -9,6 +10,7 @@ export class IntroScene extends Phaser.Scene {
   }
 
   create() {
+    ensureBgm(this);
     this.createBackdrop();
     this.createIntroMotion();
 
@@ -116,6 +118,7 @@ export class IntroScene extends Phaser.Scene {
     }
 
     this.skipped = true;
+    playTransitionSfx(this);
     this.cameras.main.fadeOut(180, 3, 7, 18);
     this.time.delayedCall(180, () => this.scene.start("MenuScene"));
   }
