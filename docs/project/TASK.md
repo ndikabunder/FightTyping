@@ -1,5 +1,9 @@
 ## Update Implementasi Terbaru - 2026-05-18
 
+- [x] Refactor pemilihan spritesheet frame dari `FighterRenderer` ke `FighterFrameResolver`.
+- [x] Tambah script `npm run assets:sync` untuk copy asset source ke runtime `public/assets`.
+- [x] Tambah `CONTEXT.md` sebagai glossary domain tunggal.
+- [x] Perbarui docs utama agar mencatat frame resolver, asset sync, dan glossary objective.
 - [x] Terapkan spritesheet `skill.png`, `death.png`, dan `victory.png` ke renderer player/enemy.
 - [x] Copy runtime asset baru ke `public/assets/images/player`.
 - [x] Atur animasi death agar langsung muncul saat serangan terakhir menyebabkan KO.

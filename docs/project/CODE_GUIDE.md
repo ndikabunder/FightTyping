@@ -3,6 +3,8 @@
 Status: 2026-05-14  
 Tujuan: membuat codebase mudah dibaca manusia, mudah dinavigasi AI, dan aman diperluas tanpa memecah gameplay.
 
+Update 2026-05-18: `CONTEXT.md` menjadi glossary domain utama, `FighterFrameResolver` menjadi seam pemilihan texture/frame fighter, dan `npm run assets:sync` menjadi cara resmi sinkronisasi source asset ke runtime asset.
+
 Update sinkronisasi: guide ini mencatat perubahan working tree terbaru, termasuk `fightRules`, `GameAudio`, player spritesheet manifest, objective, combo, player skill, enemy skill, dodge/feint, dan asset runtime `public/assets`.
 
 Build note: `vite.config.mjs` memisahkan chunk `phaser` dari app code via `manualChunks` dan menaikkan `chunkSizeWarningLimit` karena engine Phaser memang besar.
@@ -43,7 +45,7 @@ src/phaser/
   audio/              Phaser audio keys/helpers
   fx/                 scene transition FX
   scenes/             Boot/Preload/Intro/Menu/Leaderboard/Fight
-  view/               FighterRenderer + DebugRenderer
+  view/               FighterRenderer, FighterFrameResolver, DebugRenderer
 
 src/ui/hud/
   HudController.ts    DOM HUD rendering + result buttons
@@ -59,9 +61,23 @@ src/ui/hud/
 6. Jalankan:
 
 ```bash
+npm.cmd run assets:sync
 npm.cmd test -- --run
 npm.cmd run build
 ```
+
+## Asset Sync
+
+- Source asset berada di `assets/**`.
+- Runtime asset yang dibaca Vite/Phaser berada di `public/assets/**`.
+- Setelah menambah/mengganti sprite atau SFX, jalankan `npm run assets:sync`.
+- Script sync gagal cepat bila asset wajib hilang, sehingga broken manifest ketahuan sebelum build/playtest.
+
+## Aturan Frame Fighter
+
+- `FighterRenderer` mengurus Phaser object, tint, alpha, pose wireframe fallback, dan posisi container.
+- `FighterFrameResolver` mengurus keputusan texture/frame untuk idle, dash, attack, skill, death, victory, dan knockdown.
+- Jangan menambah timer spritesheet baru langsung di `FighterRenderer`; tambahkan ke resolver agar locality frame timing tetap satu tempat.
 
 ## Aturan `FightSimulation`
 

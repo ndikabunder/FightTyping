@@ -1,5 +1,8 @@
 ## Update Implementasi Terbaru - 2026-05-18
 
+- `FighterFrameResolver` menjadi seam khusus untuk memilih frame visual fighter: attack dash, attack impact, skill, death, victory, knockdown, dan idle.
+- Asset pipeline manual diganti dengan script `npm run assets:sync` agar source asset dan runtime asset tidak mudah drift.
+- `CONTEXT.md` ditambahkan sebagai glossary domain utama untuk menyatukan istilah objective, combo, skill, final strike, outcome animation, dan runtime/source asset.
 - Spritesheet `skill.png`, `death.png`, dan `victory.png` sudah masuk ke manifest player dan diload Phaser dari `public/assets/images/player`.
 - Animasi death diprioritaskan saat `ko`, sehingga muncul langsung ketika serangan terakhir mengenai target.
 - Animasi victory player tampil sebagai outcome menang setelah final strike selesai.

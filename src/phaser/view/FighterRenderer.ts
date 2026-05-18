@@ -1,5 +1,6 @@
 import Phaser from "phaser";
-import type { ActionId, Fighter, FighterState, GameSnapshot } from "../../game/types";
+import type { Fighter, FighterState, GameSnapshot } from "../../game/types";
+import { FighterFrameResolver } from "./FighterFrameResolver";
 
 type FighterPalette = {
   core: number;
@@ -31,27 +32,9 @@ const idlePose: Pose = {
   kickLeft: 0
 };
 
-const PLAYER_LAST_FILLED_FRAME = 28;
 const FIGHTER_DISPLAY_WIDTH = 1000;
 const FIGHTER_DISPLAY_HEIGHT = Math.round(FIGHTER_DISPLAY_WIDTH * (448 / 768));
 const AURA_RING_Y = -232;
-const PLAYER_DASH_ANIMATION_MS = 170;
-const PLAYER_ATTACK_ANIMATION_MS = 760;
-const PLAYER_FRAME_MS = 80;
-const SPECIAL_FRAME_MS = 92;
-const SPECIAL_ANIMATION_MS = 1400;
-
-const fighterTextureKeys: Record<string, string> = {
-  idle: "player.idle",
-  dash: "player.dash",
-  skill: "player.skill",
-  death: "player.death",
-  victory: "player.victory",
-  punchRight: "player.punchRight",
-  punchLeft: "player.punchLeft",
-  kickRight: "player.kickRight",
-  kickLeft: "player.kickLeft"
-};
 
 export class FighterRenderer {
   readonly container: Phaser.GameObjects.Container;
@@ -59,23 +42,10 @@ export class FighterRenderer {
   private readonly sprite: Phaser.GameObjects.Sprite | null;
   private readonly wire: Phaser.GameObjects.Graphics;
   private readonly palette: FighterPalette;
+  private readonly frameResolver = new FighterFrameResolver();
   private readonly pose = { ...idlePose };
   private lastState: FighterState = "idle";
   private lastSpriteTextureKey = "";
-  private visualAttackId: ActionId | null = null;
-  private visualAttackTextureKey: string | null = null;
-  private visualActionSerial = 0;
-  private visualAttackFirstFrame = 0;
-  private visualAttackLastFrame = 0;
-  private visualAttackStartedAtMs = 0;
-  private visualDashUntilMs = 0;
-  private visualAttackUntilMs = 0;
-  private specialAnimation: "skill" | null = null;
-  private specialStartedAtMs = 0;
-  private specialUntilMs = 0;
-  private lastSkillFeedbackAt = -1;
-  private outcomeAnimation: "victory" | "death" | null = null;
-  private outcomeStartedAtMs = 0;
 
   constructor(private readonly scene: Phaser.Scene, fighter: Fighter, _baseColor: number, _name: string) {
     this.palette = palettes[fighter.id] ?? palettes.player;
@@ -94,7 +64,7 @@ export class FighterRenderer {
   sync(fighter: Fighter, roundState: GameSnapshot["roundState"] = "fighting", skillFeedbackAt = -1, suppressOutcome = false) {
     this.container.setPosition(fighter.position.x, fighter.position.y);
     this.container.setScale(fighter.facing, 1);
-    this.updateSpecialAnimation(fighter, skillFeedbackAt);
+    this.frameResolver.sync(fighter, this.scene.time.now, skillFeedbackAt);
     this.syncSpriteAnimation(fighter, roundState, suppressOutcome);
 
     if (fighter.state !== this.lastState || fighter.state === "attack_active" || fighter.state === "attack_startup") {
@@ -147,8 +117,7 @@ export class FighterRenderer {
       return;
     }
 
-    this.updateAttackSequence(fighter);
-    const visualFrame = this.getVisualFrame(fighter, this.getOutcome(fighter, roundState, suppressOutcome));
+    const visualFrame = this.frameResolver.resolve(fighter, roundState, this.scene.time.now, suppressOutcome);
     if (visualFrame.textureKey !== this.lastSpriteTextureKey) {
       this.sprite.setTexture(visualFrame.textureKey);
       this.lastSpriteTextureKey = visualFrame.textureKey;
@@ -160,160 +129,6 @@ export class FighterRenderer {
     this.sprite.setTintMode(Phaser.TintModes.FILL);
     this.sprite.setAlpha(fighter.id === "player" ? 0.86 : 0.82);
     this.wire.setVisible(false);
-  }
-
-  private updateSpecialAnimation(fighter: Fighter, skillFeedbackAt: number) {
-    if (fighter.id !== "player" || skillFeedbackAt < 0 || skillFeedbackAt === this.lastSkillFeedbackAt) {
-      return;
-    }
-    this.lastSkillFeedbackAt = skillFeedbackAt;
-    this.specialAnimation = "skill";
-    this.specialStartedAtMs = this.scene.time.now;
-    this.specialUntilMs = this.scene.time.now + SPECIAL_ANIMATION_MS;
-  }
-
-  private updateAttackSequence(fighter: Fighter) {
-    if (fighter.visualActionId && fighter.visualActionSerial !== this.visualActionSerial) {
-      this.visualActionSerial = fighter.visualActionSerial;
-      this.visualAttackId = fighter.visualActionId;
-      this.visualAttackTextureKey = this.getAttackTextureKey(fighter.visualActionId);
-      const frameRange = this.getAttackFrameRange(fighter.visualActionId);
-      this.visualAttackFirstFrame = frameRange.first;
-      this.visualAttackLastFrame = frameRange.last;
-      this.visualAttackStartedAtMs = this.scene.time.now;
-      this.visualDashUntilMs = this.scene.time.now + PLAYER_DASH_ANIMATION_MS;
-      this.visualAttackUntilMs = this.visualDashUntilMs + PLAYER_ATTACK_ANIMATION_MS;
-      return;
-    }
-
-    if (this.visualAttackId && this.scene.time.now >= this.visualAttackUntilMs) {
-      this.visualAttackId = null;
-      this.visualAttackTextureKey = null;
-      this.visualAttackFirstFrame = 0;
-      this.visualAttackLastFrame = 0;
-      this.visualAttackStartedAtMs = 0;
-      this.visualDashUntilMs = 0;
-      this.visualAttackUntilMs = 0;
-    }
-  }
-
-  private getVisualFrame(fighter: Fighter, outcome: "victory" | "death" | null = null): { textureKey: string; frame: number } {
-    const nowMs = this.scene.time.now;
-
-    if (outcome !== this.outcomeAnimation) {
-      this.outcomeAnimation = outcome;
-      this.outcomeStartedAtMs = nowMs;
-    }
-
-    if (outcome === "victory") {
-      return {
-        textureKey: fighterTextureKeys.victory,
-        frame: this.loopFrame(nowMs - this.outcomeStartedAtMs, 0, PLAYER_LAST_FILLED_FRAME, SPECIAL_FRAME_MS)
-      };
-    }
-
-    if (outcome === "death") {
-      return {
-        textureKey: fighterTextureKeys.death,
-        frame: this.clampedFrame(nowMs - this.outcomeStartedAtMs, 0, PLAYER_LAST_FILLED_FRAME, SPECIAL_FRAME_MS)
-      };
-    }
-
-    if (this.specialAnimation && nowMs < this.specialUntilMs) {
-      return {
-        textureKey: fighterTextureKeys.skill,
-        frame: this.clampedFrame(nowMs - this.specialStartedAtMs, 0, PLAYER_LAST_FILLED_FRAME, SPECIAL_FRAME_MS)
-      };
-    }
-
-    if (this.specialAnimation && nowMs >= this.specialUntilMs) {
-      this.specialAnimation = null;
-    }
-
-    if (this.visualAttackId && this.scene.time.now < this.visualDashUntilMs) {
-      return {
-        textureKey: fighterTextureKeys.dash,
-        frame: this.loopFrame(nowMs - this.visualAttackStartedAtMs, 0, PLAYER_LAST_FILLED_FRAME, 48)
-      };
-    }
-
-    if (this.visualAttackTextureKey && this.scene.time.now < this.visualAttackUntilMs) {
-      return {
-        textureKey: this.visualAttackTextureKey,
-        frame: this.clampedFrame(nowMs - this.visualDashUntilMs, this.visualAttackFirstFrame, this.visualAttackLastFrame, PLAYER_FRAME_MS)
-      };
-    }
-
-    if (fighter.state === "knockdown") {
-      return {
-        textureKey: fighterTextureKeys.dash,
-        frame: this.loopFrame(fighter.stateElapsedMs, 0, PLAYER_LAST_FILLED_FRAME, 48)
-      };
-    }
-
-    if (fighter.state === "attack_startup") {
-      return {
-        textureKey: fighterTextureKeys.dash,
-        frame: this.loopFrame(fighter.stateElapsedMs, 0, PLAYER_LAST_FILLED_FRAME, 48)
-      };
-    }
-
-    return {
-      textureKey: fighterTextureKeys.idle,
-      frame: this.loopFrame(this.scene.time.now, 0, PLAYER_LAST_FILLED_FRAME, 125)
-    };
-  }
-
-  private getOutcome(fighter: Fighter, roundState: GameSnapshot["roundState"] = "fighting", suppressOutcome = false) {
-    if (fighter.state === "ko") {
-      return "death";
-    }
-    if (suppressOutcome) {
-      return null;
-    }
-    if (fighter.id === "player" && roundState === "won") {
-      return "victory";
-    }
-    return null;
-  }
-
-  private getAttackTextureKey(actionId: ActionId) {
-    switch (actionId) {
-      case "attack.punch.right":
-        return fighterTextureKeys.punchRight;
-      case "attack.punch.left":
-        return fighterTextureKeys.punchLeft;
-      case "attack.kick.right":
-        return fighterTextureKeys.kickRight;
-      case "attack.kick.left":
-        return fighterTextureKeys.kickLeft;
-      default:
-        return fighterTextureKeys.punchRight;
-    }
-  }
-
-  private getAttackFrameRange(actionId: ActionId) {
-    switch (actionId) {
-      case "attack.punch.right":
-        return { first: 10, last: 17 };
-      case "attack.punch.left":
-        return { first: 13, last: 18 };
-      case "attack.kick.right":
-        return { first: 8, last: 15 };
-      case "attack.kick.left":
-        return { first: 6, last: 18 };
-      default:
-        return { first: 10, last: 17 };
-    }
-  }
-
-  private loopFrame(elapsedMs: number, firstFrame: number, lastFrame: number, frameMs: number) {
-    const frameCount = lastFrame - firstFrame + 1;
-    return firstFrame + (Math.floor(Math.max(0, elapsedMs) / frameMs) % frameCount);
-  }
-
-  private clampedFrame(elapsedMs: number, firstFrame: number, lastFrame: number, frameMs: number) {
-    return Math.min(lastFrame, firstFrame + Math.floor(Math.max(0, elapsedMs) / frameMs));
   }
 
   private strike(target: Partial<Pose>) {

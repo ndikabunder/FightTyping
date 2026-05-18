@@ -1,5 +1,8 @@
 ## Update Terbaru - 2026-05-18
 
+- Refactor visual fighter: pemilihan texture/frame dipindah dari `FighterRenderer` ke `FighterFrameResolver` agar state render lebih mudah dites dan dirawat.
+- Tambah `npm run assets:sync` untuk menyalin source asset dari `assets/**` ke runtime asset `public/assets/**`.
+- Tambah `CONTEXT.md` sebagai glossary domain tunggal, termasuk definisi `Objective`, `Objective Progress`, `Neon Break`, `Final Strike`, `Outcome Animation`, dan `Frame Resolver`.
 - Asset spritesheet tambahan sudah diterapkan: `skill.png`, `death.png`, dan `victory.png` dari `assets/images/player` ke runtime `public/assets/images/player`.
 - `FighterRenderer` tetap memakai manual frame control; animasi death langsung keluar saat fighter terkena serangan terakhir/KO.
 - Animasi victory player memakai spritesheet `victory.png` setelah final strike/result reveal selesai.
@@ -79,6 +82,7 @@ Phaser 4 typing-fighting prototype. Type limb prompts to trigger attacks.
 
 ```bash
 npm install
+npm run assets:sync
 npm run dev
 ```
 
