@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="630" height="500" viewBox="0 0 630 500" role="img" aria-label="Fight Typing itch cover">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#061521"/>
+      <stop offset="0.45" stop-color="#10071c"/>
+      <stop offset="1" stop-color="#2a0718"/>
+    </linearGradient>
+    <linearGradient id="slash" x1="100" y1="420" x2="530" y2="80" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7cf7ff"/>
+      <stop offset="0.48" stop-color="#fff3b0"/>
+      <stop offset="1" stop-color="#ff4d8d"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <pattern id="grid" width="42" height="42" patternUnits="userSpaceOnUse">
+      <path d="M42 0H0v42" fill="none" stroke="#7cf7ff" stroke-opacity="0.13" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="630" height="500" fill="url(#bg)"/>
+  <rect width="630" height="500" fill="url(#grid)"/>
+  <path d="M-30 420 420 -20h86L70 500h-90Z" fill="#7cf7ff" opacity="0.14"/>
+  <path d="M135 422 508 62h72L210 448Z" fill="url(#slash)" opacity="0.88" filter="url(#glow)"/>
+  <circle cx="164" cy="330" r="92" fill="#7cf7ff" opacity="0.12"/>
+  <circle cx="466" cy="330" r="92" fill="#ff4d8d" opacity="0.13"/>
+  <path d="M96 350c46-78 108-78 156 0" fill="none" stroke="#7cf7ff" stroke-width="18" stroke-linecap="round" opacity="0.82"/>
+  <path d="M378 350c46-78 108-78 156 0" fill="none" stroke="#ff4d8d" stroke-width="18" stroke-linecap="round" opacity="0.82"/>
+  <text x="315" y="142" text-anchor="middle" fill="#fff3b0" font-family="Trebuchet MS, Arial, sans-serif" font-size="64" font-weight="900" letter-spacing="2">FIGHT</text>
+  <text x="315" y="208" text-anchor="middle" fill="#e8fbff" font-family="Trebuchet MS, Arial, sans-serif" font-size="64" font-weight="900" letter-spacing="2">TYPING</text>
+  <text x="315" y="252" text-anchor="middle" fill="#7cf7ff" font-family="Trebuchet MS, Arial, sans-serif" font-size="18" font-weight="900" letter-spacing="4">TYPE WORDS · LAND STRIKES · CLEAR QUESTS</text>
+  <g transform="translate(160 286)">
+    <rect x="0" y="0" width="310" height="62" rx="8" fill="#06101a" opacity="0.86" stroke="#ffd166" stroke-opacity="0.7"/>
+    <text x="155" y="25" text-anchor="middle" fill="#ffd166" font-family="Trebuchet MS, Arial, sans-serif" font-size="14" font-weight="900" letter-spacing="2">ACTIVE QUEST</text>
+    <text x="155" y="48" text-anchor="middle" fill="#e8fbff" font-family="Trebuchet MS, Arial, sans-serif" font-size="18" font-weight="900">Keep combo x8</text>
+  </g>
+  <text x="315" y="456" text-anchor="middle" fill="#ff9fc1" font-family="Trebuchet MS, Arial, sans-serif" font-size="18" font-weight="900" letter-spacing="3">CYBER MARTIAL TYPING</text>
+</svg>

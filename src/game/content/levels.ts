@@ -97,16 +97,16 @@ export const enemyArchetypes: Record<EnemyArchetypeId, EnemyArchetype> = {
 };
 
 export const levels: LevelDefinition[] = [
-  { id: 1, name: "Warm-Up Guard", focus: "Hand tutorial", enemyArchetype: "basicStriker", enemyHp: 80, enemyCooldownMs: 5200, enemyTelegraphMs: 1500, wordPoolTier: "level1", objective: "Hit both punches.", arenaTheme: "cyanGrid" },
+  { id: 1, name: "Warm-Up Guard", focus: "Introduce punches", enemyArchetype: "basicStriker", enemyHp: 80, enemyCooldownMs: 5600, enemyTelegraphMs: 1700, wordPoolTier: "level1", objective: "Hit both punches.", arenaTheme: "cyanGrid" },
   { id: 2, name: "Twin Jab", focus: "Both hands", enemyArchetype: "basicStriker", enemyHp: 95, enemyCooldownMs: 4700, enemyTelegraphMs: 1400, wordPoolTier: "level2", objective: "Keep combo x5.", arenaTheme: "cyanGrid" },
-  { id: 3, name: "First Kick", focus: "Leg intro", enemyArchetype: "kicker", enemyHp: 110, enemyCooldownMs: 4300, enemyTelegraphMs: 1300, wordPoolTier: "level3", objective: "Keep combo x3.", arenaTheme: "violetRing" },
-  { id: 4, name: "Backstep Lesson", focus: "First dodge", enemyArchetype: "kicker", enemyHp: 120, enemyCooldownMs: 4000, enemyTelegraphMs: 1200, wordPoolTier: "level4", objective: "Dodge 2 attacks.", arenaTheme: "violetRing" },
-  { id: 5, name: "Heavy Check", focus: "Timing dodge", enemyArchetype: "heavyFighter", enemyHp: 160, enemyCooldownMs: 4200, enemyTelegraphMs: 1250, wordPoolTier: "level5", objective: "Use all limbs.", arenaTheme: "redPressure" },
-  { id: 6, name: "Tempo Break", focus: "Typing speed", enemyArchetype: "tempoFighter", enemyHp: 130, enemyCooldownMs: 3500, enemyTelegraphMs: 1000, wordPoolTier: "level6", objective: "Trigger Neon Break.", arenaTheme: "cyanGrid" },
+  { id: 3, name: "First Kick", focus: "Introduce kicks", enemyArchetype: "kicker", enemyHp: 108, enemyCooldownMs: 4450, enemyTelegraphMs: 1450, wordPoolTier: "level3", objective: "Keep combo x3.", arenaTheme: "violetRing" },
+  { id: 4, name: "Backstep Lesson", focus: "Test dodge timing", enemyArchetype: "kicker", enemyHp: 118, enemyCooldownMs: 4150, enemyTelegraphMs: 1350, wordPoolTier: "level4", objective: "Dodge 2 attacks.", arenaTheme: "violetRing" },
+  { id: 5, name: "Heavy Check", focus: "Remix limb choice", enemyArchetype: "heavyFighter", enemyHp: 154, enemyCooldownMs: 4300, enemyTelegraphMs: 1300, wordPoolTier: "level5", objective: "Use all limbs.", arenaTheme: "redPressure" },
+  { id: 6, name: "Tempo Break", focus: "Introduce Neon Break", enemyArchetype: "tempoFighter", enemyHp: 128, enemyCooldownMs: 3600, enemyTelegraphMs: 1100, wordPoolTier: "level6", objective: "Trigger Neon Break.", arenaTheme: "cyanGrid" },
   { id: 7, name: "Priority Drill", focus: "Prompt priority", enemyArchetype: "tempoFighter", enemyHp: 145, enemyCooldownMs: 3200, enemyTelegraphMs: 900, wordPoolTier: "level7", objective: "Keep combo x8.", arenaTheme: "violetRing" },
-  { id: 8, name: "Mirror Focus", focus: "Focus and accuracy", enemyArchetype: "trickster", enemyHp: 150, enemyCooldownMs: 3400, enemyTelegraphMs: 850, wordPoolTier: "level8", objective: "Avoid 3 misses.", arenaTheme: "redPressure" },
-  { id: 9, name: "Pressure Mix", focus: "Mixed pressure", enemyArchetype: "heavyFighter", enemyHp: 190, enemyCooldownMs: 3100, enemyTelegraphMs: 800, wordPoolTier: "level9", objective: "Dodge 2 heavy hits.", arenaTheme: "redPressure" },
-  { id: 10, name: "Neon Champion", focus: "Final exam", enemyArchetype: "boss", enemyHp: 240, enemyCooldownMs: 3600, enemyTelegraphMs: 1100, wordPoolTier: "level10", objective: "Reach phase 3.", arenaTheme: "goldFinale" }
+  { id: 8, name: "Mirror Focus", focus: "Remix accuracy", enemyArchetype: "trickster", enemyHp: 148, enemyCooldownMs: 3450, enemyTelegraphMs: 950, wordPoolTier: "level8", objective: "Avoid 3 misses.", arenaTheme: "redPressure" },
+  { id: 9, name: "Pressure Mix", focus: "Master dodge pressure", enemyArchetype: "heavyFighter", enemyHp: 184, enemyCooldownMs: 3200, enemyTelegraphMs: 900, wordPoolTier: "level9", objective: "Dodge 2 heavy hits.", arenaTheme: "redPressure" },
+  { id: 10, name: "Neon Champion", focus: "Master all systems", enemyArchetype: "boss", enemyHp: 232, enemyCooldownMs: 3700, enemyTelegraphMs: 1200, wordPoolTier: "level10", objective: "Reach phase 3.", arenaTheme: "goldFinale" }
 ];
 
 export function getLevel(index: number) {

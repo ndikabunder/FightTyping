@@ -113,21 +113,21 @@ describe("FightSimulation", () => {
     const sim = new FightSimulation();
     sim.update(1800, 1800);
 
-    sim.update(5200, 7000);
+    sim.update(5600, 7400);
     expect(sim.getSnapshot().enemy.visualActionId).toBe("attack.punch.right");
-    sim.update(80, 7080);
+    sim.update(80, 7480);
     expect(sim.getSnapshot().enemy.position.x).toBeLessThan(fighterHome.enemyX);
     expect(sim.getSnapshot().enemy.position.x).toBeGreaterThan(520);
 
-    sim.update(600, 7600);
+    sim.update(600, 8000);
     expect(sim.getSnapshot().enemy.position.x).toBeLessThan(fighterHome.enemyX);
     expect(sim.getSnapshot().enemy.state).toBe("attack_recovery");
 
-    sim.update(900, 8500);
+    sim.update(900, 8900);
     expect(sim.getSnapshot().enemy.position.x).toBe(fighterHome.enemyX);
     expect(sim.getSnapshot().enemy.state).toBe("idle");
 
-    sim.update(5200, 13700);
+    sim.update(5600, 14500);
     expect(sim.getSnapshot().enemy.visualActionId).toBe("attack.punch.left");
   });
 
@@ -135,7 +135,7 @@ describe("FightSimulation", () => {
     const sim = new FightSimulation();
     expect(sim.getSnapshot().level.id).toBe(1);
     expect(sim.getSnapshot().enemy.maxHp).toBe(80);
-    expect(sim.getSnapshot().enemyAttackEveryMs).toBe(5200);
+    expect(sim.getSnapshot().enemyAttackEveryMs).toBe(5600);
 
     sim.nextLevel();
 
@@ -144,7 +144,17 @@ describe("FightSimulation", () => {
     expect(sim.getSnapshot().enemyAttackEveryMs).toBe(4700);
   });
 
+  it("does not change levels from number keys", () => {
+    const sim = new FightSimulation();
+
+    sim.handleKey("7", 1000);
+    sim.handleKey("0", 1000);
+
+    expect(sim.getSnapshot().level.id).toBe(1);
+  });
+
   it("applies archetype pacing and tracks level objectives", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
     const sim = new FightSimulation();
     sim.setLevel(7);
     sim.update(1800, 1800);
@@ -205,7 +215,7 @@ describe("FightSimulation", () => {
     sim.update(1800, 1800);
 
     expect(sim.getSnapshot().enemySkill.available).toBe(true);
-    expect(sim.getSnapshot().enemySkill.cooldownMs).toBe(Math.round(3500 * 0.82 * enemySkillRules.cooldownMultiplier));
+    expect(sim.getSnapshot().enemySkill.cooldownMs).toBe(Math.round(3600 * 0.82 * enemySkillRules.cooldownMultiplier));
 
     const enemySkillCooldownMs = sim.getSnapshot().enemySkill.cooldownMs;
     sim.update(enemySkillCooldownMs, 1800 + enemySkillCooldownMs);

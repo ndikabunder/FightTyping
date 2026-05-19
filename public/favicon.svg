@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Fight Typing favicon">
+  <defs>
+    <linearGradient id="bg" x1="8" y1="6" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#061521"/>
+      <stop offset="0.55" stop-color="#10071c"/>
+      <stop offset="1" stop-color="#210718"/>
+    </linearGradient>
+    <linearGradient id="slash" x1="16" y1="50" x2="48" y2="10" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7cf7ff"/>
+      <stop offset="0.48" stop-color="#fff3b0"/>
+      <stop offset="1" stop-color="#ff4d8d"/>
+    </linearGradient>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="2.4" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.49 0 0 0 0 0.97 0 0 0 0 1 0 0 0 0.82 0" result="cyanGlow"/>
+      <feMerge>
+        <feMergeNode in="cyanGlow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+  <path d="M11 16h42l5 5v26l-6 6H12l-6-6V21l5-5Z" fill="none" stroke="#7cf7ff" stroke-opacity="0.38" stroke-width="2"/>
+  <path d="M9 48 45 10h10L20 54H10l-1-6Z" fill="url(#slash)" filter="url(#glow)"/>
+  <path d="M18 22h28v7H36v22h-8V29H18v-7Z" fill="#e8fbff"/>
+  <path d="M18 22h28v7H36v22h-8V29H18v-7Z" fill="none" stroke="#ff4d8d" stroke-opacity="0.65" stroke-width="1.5"/>
+  <path d="M13 42h13M38 42h13" stroke="#ffd166" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="14" cy="15" r="2" fill="#fff3b0"/>
+  <circle cx="51" cy="50" r="2" fill="#ff4d8d"/>
+</svg>

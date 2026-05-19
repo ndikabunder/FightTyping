@@ -1,3 +1,16 @@
+## Update Implementasi Terbaru - 2026-05-19
+
+- Quest panel dipoles ulang menjadi state `IN PROGRESS` dan `CLEAR` dengan progress bar, badge status, glow statis, dan motion `quest clear` sekali jalan; animasi nudge yang membuat status terasa bergetar sudah dihapus.
+- Quest complete/incomplete punya treatment visual berbeda: incomplete memakai aksen gold, complete memakai cyan; combo tetap berada di bawah panel objective dan tidak memakai border/background.
+- Tutorial ringan level 1-3 ditampilkan di briefing sebagai box `TIP LEVEL X`: L1 membaca prompt limb, L2 menjaga combo dan menghindari wrong key, L3 memakai `Neon Break` setelah combo 3x.
+- Replay loop ditambah lewat medal run `S/A/B/C`, badge `PERFECT QUEST ✦`, kolom medal di leaderboard, dan ringkasan `BEST BY LEVEL`.
+- Shortcut angka `0-9` untuk pindah level dihapus dari runtime gameplay; progres level normal tetap lewat victory `NEXT`.
+- Debug hitbox/hurtbox tidak lagi aktif secara default; box combat hanya muncul jika debug ditoggle dengan tombol `` ` ``.
+- Combat feel dipoles: hitstop naik menjadi punch `58ms` dan kick `86ms`, spark/cross impact lokal diperkuat, shake tetap aktif, full-screen flash hit biasa dihapus agar tidak membuat pusing.
+- Typing microfeedback ditambah: huruf terakhir yang benar melakukan pop kecil, prompt matching punya glow lebih kuat, SFX typing/attack memakai variasi rate ringan.
+- Enemy warning readability ditambah: cooldown attack menampilkan cue `WATCH`, `READY`, atau `DODGE NOW`; enemy skill menampilkan `CHARGING`, `WARNING`, atau `DANGER`.
+- Level pacing dituning ke kurva introduce → test → remix → mastery; beberapa HP/cooldown/telegraph/focus level disesuaikan untuk L1, L3-L6, L8-L10.
+
 ## Update Implementasi Terbaru - 2026-05-18
 
 - `FighterFrameResolver` menjadi seam khusus untuk memilih frame visual fighter: attack dash, attack impact, skill, death, victory, knockdown, dan idle.

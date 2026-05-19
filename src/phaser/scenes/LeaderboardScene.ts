@@ -40,9 +40,9 @@ export class LeaderboardScene extends Phaser.Scene {
       this.drawTable(entries);
     }
 
-    this.footerButton(GAME_WIDTH / 2 - 210, 642, "BACK", () => this.backToMenu());
-    this.footerButton(GAME_WIDTH / 2, 642, "START", () => this.startFight());
-    this.footerButton(GAME_WIDTH / 2 + 210, 642, "CLEAR", () => this.clearAndRestart());
+    this.footerButton(GAME_WIDTH / 2 - 210, 648, "BACK", () => this.backToMenu());
+    this.footerButton(GAME_WIDTH / 2, 648, "START", () => this.startFight());
+    this.footerButton(GAME_WIDTH / 2 + 210, 648, "CLEAR", () => this.clearAndRestart());
     this.input.keyboard?.on("keydown-B", this.backToMenu, this);
     this.input.keyboard?.on("keydown-ESC", this.backToMenu, this);
     this.input.keyboard?.on("keydown-S", this.startFight, this);
@@ -83,35 +83,38 @@ export class LeaderboardScene extends Phaser.Scene {
   }
 
   private drawTable(entries: ReturnType<typeof readLeaderboard>) {
-    const headerY = 148;
-    const rowHeight = 42;
+
+    const headerY = 154;
+    const rowHeight = 38;
     const tableCenterX = GAME_WIDTH / 2;
-    const tableWidth = 950;
+    const tableWidth = 980;
     const tableLeft = tableCenterX - tableWidth / 2;
     const columns = [
       { label: "#", x: tableLeft + 44 },
       { label: "PLAYER", x: tableLeft + 150 },
       { label: "LEVEL", x: tableLeft + 320 },
       { label: "TIME", x: tableLeft + 470 },
-      { label: "SCORE", x: tableLeft + 630 },
-      { label: "ACC", x: tableLeft + 780 }
+      { label: "SCORE", x: tableLeft + 600 },
+      { label: "ACC", x: tableLeft + 730 },
+      { label: "MEDAL", x: tableLeft + 885 }
     ];
 
     columns.forEach((column) => this.tableText(column.x, headerY, column.label, "#7cf7ff", 15));
 
-    entries.forEach((entry, index) => {
-      const y = headerY + 46 + index * rowHeight;
+    entries.slice(0, 8).forEach((entry, index) => {
+      const y = headerY + 40 + index * rowHeight;
       const bg = this.add.graphics();
       bg.fillStyle(index % 2 === 0 ? 0x071423 : 0x100a1d, 0.62);
-      bg.fillRoundedRect(tableLeft, y - 18, tableWidth, 34, 4);
+      bg.fillRoundedRect(tableLeft, y - 17, tableWidth, 32, 4);
       bg.lineStyle(1, index === 0 ? 0xffd166 : 0x7cf7ff, index === 0 ? 0.45 : 0.18);
-      bg.strokeRoundedRect(tableLeft, y - 18, tableWidth, 34, 4);
+      bg.strokeRoundedRect(tableLeft, y - 17, tableWidth, 32, 4);
       this.tableText(tableLeft + 44, y, `${index + 1}`, index === 0 ? "#ffd166" : "#e8fbff");
       this.tableText(tableLeft + 150, y, entry.player, "#e8fbff");
       this.tableText(tableLeft + 320, y, `${entry.levelCompleted}`, "#fff3b0");
       this.tableText(tableLeft + 470, y, formatTime(entry.timeMs), "#e8fbff");
-      this.tableText(tableLeft + 630, y, `${entry.score}`, "#e8fbff");
-      this.tableText(tableLeft + 780, y, `${entry.accuracy}%`, "#e8fbff");
+      this.tableText(tableLeft + 600, y, `${entry.score}`, "#e8fbff");
+      this.tableText(tableLeft + 730, y, `${entry.accuracy}%`, "#e8fbff");
+      this.tableText(tableLeft + 885, y, `${entry.medal}${entry.perfectQuest ? " *" : ""}`, medalColor(entry.medal));
     });
   }
 
@@ -205,3 +208,18 @@ function shortcutFor(label: string) {
       return "";
   }
 }
+
+function medalColor(medal: string) {
+  switch (medal) {
+    case "S":
+      return "#ffd166";
+    case "A":
+      return "#7cf7ff";
+    case "B":
+      return "#e8fbff";
+    default:
+      return "#ff9fc1";
+  }
+}
+
+

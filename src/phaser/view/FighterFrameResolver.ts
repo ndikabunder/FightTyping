@@ -22,6 +22,7 @@ const PLAYER_ATTACK_ANIMATION_MS = 760;
 const PLAYER_FRAME_MS = 80;
 const SPECIAL_FRAME_MS = 92;
 const SPECIAL_ANIMATION_MS = 1400;
+export const DEATH_ANIMATION_MS = (PLAYER_LAST_FILLED_FRAME + 1) * SPECIAL_FRAME_MS;
 
 const textureKeys: Record<FighterTextureKey, string> = {
   idle: "player.idle",

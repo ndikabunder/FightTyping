@@ -1,8 +1,10 @@
 import { limbLabels } from "../../game/content/promptPools";
+import { medalForRun } from "../../game/systems/LeaderboardStore";
 import type { GameSnapshot, PromptState } from "../../game/types";
 
 const LOGICAL_WIDTH = 1280;
 const LOGICAL_HEIGHT = 720;
+const LEVEL_INTRO_MS = 360;
 
 const promptOffsets = {
   leftHand: { x: -168, y: -172 },
@@ -17,8 +19,11 @@ export class HudController {
   private lastComboSerial = 0;
   private comboAnimation: { serial: number; startedAtMs: number; durationMs: number } | null = null;
   private comboAnimationFrame: number | null = null;
+  private countdownIntroStartedAtMs: number | null = null;
+  private lastObjectiveCompleted = false;
+  private questCompleteMotionUntilMs = 0;
 
-  constructor(rootId: string, private readonly onCommand: (command: "retry" | "next" | "menu") => void = () => undefined) {
+  constructor(rootId: string, private readonly onCommand: (command: "retry" | "next" | "menu" | "resume") => void = () => undefined) {
     const root = document.getElementById(rootId);
     if (!root) {
       throw new Error(`Missing HUD root #${rootId}`);
@@ -29,6 +34,26 @@ export class HudController {
 
   render(snapshot: GameSnapshot, options: { suppressResult?: boolean } = {}) {
     const showCombatOverlays = snapshot.roundState !== "won" && snapshot.roundState !== "lost";
+    const objectiveCompleted = snapshot.level.objectiveProgress.completed;
+    const nowMs = performance.now();
+
+    if (objectiveCompleted && !this.lastObjectiveCompleted) {
+      this.questCompleteMotionUntilMs = nowMs + 900;
+    }
+
+    if (!objectiveCompleted) {
+      this.questCompleteMotionUntilMs = 0;
+    }
+
+    this.lastObjectiveCompleted = objectiveCompleted;
+
+    const questStatusClass = objectiveCompleted ? "complete" : "incomplete";
+    const questMotionClass = nowMs < this.questCompleteMotionUntilMs ? "just-completed" : "";
+    const questMotionElapsedMs = Math.max(0, 900 - Math.max(0, this.questCompleteMotionUntilMs - nowMs));
+    const questMotionStyle = questMotionClass ? ` style="--quest-complete-elapsed: -${questMotionElapsedMs.toFixed(0)}ms"` : "";
+    const objectiveProgressPct = pct(snapshot.level.objectiveProgress.current, snapshot.level.objectiveProgress.target);
+    const questStatusLabel = objectiveCompleted ? "CLEAR" : "IN PROGRESS";
+    const questEmphasisClass = !objectiveCompleted && snapshot.level.objectiveProgress.current === 0 ? "needs-attention" : "";
     this.root.innerHTML = `
       <div class="hud-bars">
         ${this.hpBar("PLAYER", snapshot.player.hp, snapshot.player.maxHp, "player")}
@@ -39,12 +64,20 @@ export class HudController {
         <span>Lv ${snapshot.level.id}</span>
       </div>
       <div class="level-status">
-        <div class="level-chip">
-          <strong>Quest</strong>
-          <small>${snapshot.level.objective}</small>
-          <small class="objective-progress ${snapshot.level.objectiveProgress.completed ? "complete" : ""}">
-            ${snapshot.level.objectiveProgress.label}: ${snapshot.level.objectiveProgress.current}/${snapshot.level.objectiveProgress.target}
-          </small>
+        <div class="level-chip ${questStatusClass} ${questMotionClass} ${questEmphasisClass}"${questMotionStyle}>
+          <div class="quest-head">
+            <strong>Quest</strong>
+            <span>${questStatusLabel}</span>
+          </div>
+          <small class="quest-objective">${snapshot.level.objective}</small>
+          <div class="quest-progress-row">
+            <small class="objective-progress ${snapshot.level.objectiveProgress.completed ? "complete" : ""}">
+              ${snapshot.level.objectiveProgress.label}: ${snapshot.level.objectiveProgress.current}/${snapshot.level.objectiveProgress.target}
+            </small>
+          </div>
+          <div class="quest-progress-track" aria-hidden="true">
+            <span style="width: ${objectiveProgressPct}%"></span>
+          </div>
         </div>
         ${this.comboBadge(snapshot)}
       </div>
@@ -54,6 +87,10 @@ export class HudController {
     `;
     this.bindResultButtons();
     this.syncComboAnimation(snapshot);
+  }
+
+  setHidden(hidden: boolean) {
+    this.root.hidden = hidden;
   }
 
   destroy() {
@@ -80,20 +117,37 @@ export class HudController {
 
   private briefingOverlay(snapshot: GameSnapshot) {
     if (snapshot.roundState !== "countdown") {
+      this.countdownIntroStartedAtMs = null;
       return "";
     }
+    this.countdownIntroStartedAtMs ??= performance.now();
+    const isLevelIntro = performance.now() - this.countdownIntroStartedAtMs < LEVEL_INTRO_MS;
 
     return `
-      <div class="briefing-overlay">
-        <div class="briefing-countdown">${this.countdownValue(snapshot)}</div>
+      <div class="briefing-overlay ${isLevelIntro ? "level-intro" : "fight-countdown"}">
+        <div class="briefing-level-splash">
+          <strong>Level ${snapshot.level.id}</strong>
+        </div>
+        <div class="briefing-countdown">${isLevelIntro ? "" : this.countdownValue(snapshot)}</div>
         <div class="briefing-card">
           <small>Quest Start</small>
-          <h1>Level ${snapshot.level.id}: ${snapshot.level.name}</h1>
+          <h1>Level ${snapshot.level.id}</h1>
           <strong>${snapshot.level.objective}</strong>
           <span>${snapshot.level.enemyName} - ${snapshot.level.focus}</span>
+          ${this.tutorialHint(snapshot.level.id)}
         </div>
       </div>
     `;
+  }
+
+  private tutorialHint(levelId: number) {
+    const hints: Record<number, string> = {
+      1: "Type the words near each limb. Complete both punch prompts before KO.",
+      2: "Keep typing clean. Wrong keys break combo and give enemy pressure.",
+      3: "Combo x3 unlocks Neon Break. Type its two-word panel when ready."
+    };
+    const hint = hints[levelId];
+    return hint ? `<div class="briefing-tutorial"><small>TIP LEVEL ${levelId}</small><p>${hint}</p></div>` : "";
   }
 
   private hpBar(label: string, hp: number, maxHp: number, side: string) {
@@ -119,11 +173,11 @@ export class HudController {
     };
     const typed = prompt.typed.length;
     const chars = [...prompt.text]
-      .map((char, index) => `<span class="${index < typed ? "typed" : ""}">${char}</span>`)
+      .map((char, index) => `<span class="${index < typed ? "typed" : ""} ${index === typed - 1 ? "just-typed" : ""}">${char}</span>`)
       .join("");
     const wrongShake = this.isWrongTarget(snapshot, prompt.id) ? "wrong-shake" : "";
     return `
-      <div class="prompt-card ${prompt.limb} ${prompt.status} ${wrongShake}" style="left:${pct(pos.x, LOGICAL_WIDTH)}%;top:${pct(pos.y, LOGICAL_HEIGHT)}%">
+      <div class="prompt-card ${prompt.limb} ${prompt.status} ${wrongShake}" data-typed="${typed}" style="left:${pct(pos.x, LOGICAL_WIDTH)}%;top:${pct(pos.y, LOGICAL_HEIGHT)}%">
         <small>${limbLabels[prompt.limb]}</small>
         <strong>${chars}</strong>
       </div>
@@ -137,7 +191,7 @@ export class HudController {
     };
     const typed = prompt.typed.length;
     const chars = [...prompt.text]
-      .map((char, index) => `<span class="${index < typed ? "typed" : ""}">${char}</span>`)
+      .map((char, index) => `<span class="${index < typed ? "typed" : ""} ${index === typed - 1 ? "just-typed" : ""}">${char}</span>`)
       .join("");
 
     const wrongShake = this.isWrongTarget(snapshot, prompt.id) ? "wrong-shake" : "";
@@ -152,6 +206,7 @@ export class HudController {
   private enemyCooldown(snapshot: GameSnapshot) {
     const pctValue = Math.max(0, Math.min(100, (snapshot.enemyAttackClockMs / snapshot.enemyAttackEveryMs) * 100));
     const state = pctValue >= 82 ? "danger" : pctValue >= 58 ? "warning" : "safe";
+    const cue = state === "danger" ? "DODGE NOW" : state === "warning" ? "READY" : "WATCH";
     const pos = {
       x: snapshot.enemy.position.x,
       y: snapshot.enemy.position.y - 302
@@ -160,7 +215,7 @@ export class HudController {
 
     return `
       <div class="enemy-cooldown ${state}" style="left:${pct(pos.x, LOGICAL_WIDTH)}%;top:${pct(pos.y, LOGICAL_HEIGHT)}%">
-        <span>${label}</span>
+        <span><em>${cue}</em>${label}</span>
         <div><b style="width:${pctValue}%"></b></div>
       </div>
     `;
@@ -213,10 +268,11 @@ export class HudController {
     };
     const pctValue = Math.max(0, Math.min(100, (snapshot.enemySkill.clockMs / snapshot.enemySkill.cooldownMs) * 100));
     const state = pctValue >= 85 ? "danger" : pctValue >= 58 || snapshot.enemySkill.telegraphMs > 0 ? "warning" : "charging";
+    const cue = state === "danger" ? "DANGER" : state === "warning" ? "WARNING" : "CHARGING";
     return `
       <div class="enemy-skill-panel ${state}" style="left:${pct(pos.x, LOGICAL_WIDTH)}%;top:${pct(pos.y, LOGICAL_HEIGHT)}%">
         <div class="enemy-skill-charge"><b style="width:${pctValue}%"></b></div>
-        <small>Enemy Skill x2</small>
+        <small>${cue} · Enemy Skill x2</small>
         <strong>Enemy Skill</strong>
       </div>
     `;
@@ -274,22 +330,32 @@ export class HudController {
       return "";
     }
     const text = snapshot.roundState === "paused" ? "Paused" : snapshot.roundState === "won" ? "Victory" : "Defeat";
-    const sub = snapshot.roundState === "paused" ? "Press Esc to resume" : snapshot.roundState === "lost" ? this.defeatReason(snapshot) : "";
+    const sub = snapshot.roundState === "paused" ? "ESC untuk lanjut" : snapshot.roundState === "lost" ? this.defeatReason(snapshot) : "";
     const stateClass = snapshot.roundState === "won" ? "victory" : snapshot.roundState === "lost" ? "defeat" : "paused";
+    const runAccuracy = accuracy(snapshot);
+    const medal = medalForRun(snapshot.level.id, runAccuracy, snapshot.level.score);
+    const perfectQuest = snapshot.roundState === "won" && runAccuracy >= 100;
     const buttons =
       snapshot.roundState === "won"
         ? `<button data-command="next">NEXT <small>N</small></button><button data-command="retry">RETRY <small>R</small></button><button data-command="menu">MAIN MENU <small>M</small></button>`
         : snapshot.roundState === "lost"
         ? `<button data-command="retry">RETRY <small>R</small></button><button data-command="menu">MAIN MENU <small>M</small></button>`
-        : "";
+        : `<button data-command="resume">RESUME <small>ESC</small></button><button data-command="retry">RESTART <small>R</small></button><button data-command="menu">MAIN MENU <small>M</small></button>`;
     return `
       <div class="result-overlay ${stateClass}">
+        <div class="result-cut result-cut-a"></div>
+        <div class="result-cut result-cut-b"></div>
+        <div class="result-impact">${snapshot.roundState === "lost" ? "K.O." : ""}</div>
+        <div class="result-ring"></div>
+        <div class="result-shards" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
         <div class="result-card">
+          <div class="result-kicker">${snapshot.roundState === "won" ? "Objective Secured" : snapshot.roundState === "lost" ? "Combat Failed" : "Paused"}</div>
           <h1>${text}</h1>
+          ${snapshot.roundState === "won" ? `<div class="result-medal medal-${medal.toLowerCase()}">MEDAL ${medal}${perfectQuest ? " · PERFECT QUEST ✦" : ""}</div>` : ""}
           <div class="result-stats">
             <span><small>Combo</small><strong>${snapshot.combo.count}</strong></span>
             <span><small>Best</small><strong>${snapshot.combo.best}</strong></span>
-            <span><small>Accuracy</small><strong>${accuracy(snapshot)}%</strong></span>
+            <span><small>Accuracy</small><strong>${runAccuracy}%</strong></span>
             <span><small>Score</small><strong>${snapshot.level.score}</strong></span>
             <span><small>Level</small><strong>${snapshot.level.id}</strong></span>
             <span><small>Rank</small><strong>${snapshot.level.rank}</strong></span>
@@ -317,7 +383,7 @@ export class HudController {
     this.root.querySelectorAll<HTMLButtonElement>("[data-command]").forEach((button) => {
       button.addEventListener("click", () => {
         const command = button.dataset.command;
-        if (command === "retry" || command === "next" || command === "menu") {
+        if (command === "retry" || command === "next" || command === "menu" || command === "resume") {
           this.onCommand(command);
         }
       });
@@ -330,8 +396,23 @@ export class HudController {
     }
 
     const key = event.key.toLowerCase();
+    if (key === "escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      this.onCommand("resume");
+      return;
+    }
+
     const command =
-      key === "n" ? "next" : key === "r" ? "retry" : key === "m" || key === "escape" ? "menu" : key === "enter" ? this.defaultCommand() : null;
+      key === "n"
+        ? "next"
+        : key === "r"
+        ? "retry"
+        : key === "m"
+        ? "menu"
+        : key === "enter"
+        ? this.defaultCommand()
+        : null;
 
     if (!command) {
       return;
@@ -346,10 +427,10 @@ export class HudController {
     this.onCommand(command);
   }
 
-  private defaultCommand(): "next" | "retry" | "menu" | null {
+  private defaultCommand(): "next" | "retry" | "menu" | "resume" | null {
     const button = this.root.querySelector<HTMLButtonElement>("[data-command]");
     const command = button?.dataset.command;
-    return command === "next" || command === "retry" || command === "menu" ? command : null;
+    return command === "next" || command === "retry" || command === "menu" || command === "resume" ? command : null;
   }
 
   private syncComboAnimation(snapshot: GameSnapshot) {

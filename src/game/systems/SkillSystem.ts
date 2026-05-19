@@ -45,6 +45,14 @@ export class SkillSystem {
       return current;
     }
 
+    if (current.unlocked) {
+      return {
+        ...current,
+        progress: 1,
+        status: current.status === "locked" ? "ready" : current.status
+      };
+    }
+
     const chargeBaseCombo = comboCount === 0 ? 0 : current.chargeBaseCombo;
     const progress = Math.min(1, Math.max(0, comboCount - chargeBaseCombo) / current.requiredCombo);
     const unlocked = progress >= 1 || current.unlocked;

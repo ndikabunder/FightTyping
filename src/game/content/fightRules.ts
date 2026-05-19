@@ -58,8 +58,8 @@ export const combatRules = {
 } as const;
 
 export const hitStopRules = {
-  punchMs: 45,
-  kickMs: 68
+  punchMs: 58,
+  kickMs: 86
 } as const;
 
 export const scoringRules = {

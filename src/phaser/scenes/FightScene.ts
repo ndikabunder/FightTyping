@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { FightSimulation } from "../../game/simulation/FightSimulation";
 import { GAME_HEIGHT, GAME_WIDTH, GROUND_Y } from "../config";
 import { DebugRenderer } from "../view/DebugRenderer";
+import { DEATH_ANIMATION_MS } from "../view/FighterFrameResolver";
 import { FighterRenderer } from "../view/FighterRenderer";
 import { HudController } from "../../ui/hud/HudController";
 import { playSlashTransition } from "../fx/SceneTransitions";
@@ -30,6 +31,7 @@ export class FightScene extends Phaser.Scene {
   private combatTimeScale = 1;
   private finalBlowActive = false;
   private pendingResultReveal = false;
+  private finalBlowRevealAtMs = 0;
   private finalBlowFx: Phaser.GameObjects.GameObject[] = [];
 
   constructor() {
@@ -71,14 +73,19 @@ export class FightScene extends Phaser.Scene {
       this.saveResultIfNeeded(snapshot);
     }
     this.playDashFxForNewActions(snapshot);
+    this.revealResultIfFinalBlowExpired(snapshot);
     this.renderAll(snapshot);
     this.playEnemyEvadeFx(snapshot);
     this.playFeedbackSfx(snapshot);
   }
 
   private onKeyDown(event: KeyboardEvent) {
+    if (event.key.toLowerCase() === "escape") {
+      return;
+    }
+
     if (this.simulation.getSnapshot().roundState === "fighting" && /^[a-zA-Z]$/.test(event.key)) {
-      playSfx(this, "typing", 0.38);
+      playSfx(this, "typing", 0.34, Phaser.Math.FloatBetween(0.94, 1.08));
     }
 
     this.simulation.handleKey(event.key, this.time.now);
@@ -92,8 +99,18 @@ export class FightScene extends Phaser.Scene {
     this.playFeedbackSfx(snapshot);
   }
 
-  private handleHudCommand(command: "retry" | "next" | "menu") {
+  private handleHudCommand(command: "retry" | "next" | "menu" | "resume") {
     if (this.transitioning) {
+      return;
+    }
+
+    if (command === "resume") {
+      const roundState = this.simulation.getSnapshot().roundState;
+      if (roundState === "paused" || roundState === "fighting") {
+        this.simulation.togglePause();
+        this.lastHudHash = "";
+        this.renderAll(this.simulation.getSnapshot());
+      }
       return;
     }
 
@@ -200,14 +217,14 @@ export class FightScene extends Phaser.Scene {
     if (snapshot.player.visualActionSerial !== this.lastPlayerVisualSerial) {
       this.lastPlayerVisualSerial = snapshot.player.visualActionSerial;
       if (snapshot.player.visualActionId) {
-        playSfx(this, sfxForAttack(snapshot.player.visualActionId), 0.72);
+        playSfx(this, sfxForAttack(snapshot.player.visualActionId), 0.74, snapshot.player.visualActionId.includes("kick") ? 0.92 : 1.04);
       }
       this.playDashBurst(snapshot.player.position.x, snapshot.player.position.y, 0x7cf7ff, snapshot.player.facing);
     }
     if (snapshot.enemy.visualActionSerial !== this.lastEnemyVisualSerial) {
       this.lastEnemyVisualSerial = snapshot.enemy.visualActionSerial;
       if (snapshot.enemy.visualActionId) {
-        playSfx(this, sfxForAttack(snapshot.enemy.visualActionId), 0.72);
+        playSfx(this, sfxForAttack(snapshot.enemy.visualActionId), 0.74, snapshot.enemy.visualActionId.includes("kick") ? 0.9 : 0.98);
       }
       this.playDashBurst(snapshot.enemy.position.x, snapshot.enemy.position.y, 0xff4d8d, snapshot.enemy.facing);
     }
@@ -235,7 +252,7 @@ export class FightScene extends Phaser.Scene {
   private playHitFx(hit: HitEvent) {
     const isKick = hit.attackId.includes("kick");
     const isEnemyHit = hit.defenderId === "player";
-    this.cameras.main.shake(isKick ? 135 : 90, isKick ? 0.009 : 0.006);
+    this.cameras.main.shake(isKick ? 170 : 115, isKick ? 0.012 : 0.008);
     this.fx.clear();
     this.fx.fillStyle(isEnemyHit ? 0x7cf7ff : 0xfff3b0, 0.96);
     this.fx.fillCircle(hit.impact.x, hit.impact.y, isKick ? 24 : 18);
@@ -254,6 +271,9 @@ export class FightScene extends Phaser.Scene {
 
     this.fx.lineStyle(2, 0xe8fbff, 0.52);
     this.fx.strokeCircle(hit.impact.x, hit.impact.y, isKick ? 46 : 34);
+    this.fx.lineStyle(isKick ? 3 : 2, 0xffffff, 0.82);
+    this.fx.lineBetween(hit.impact.x - (isKick ? 78 : 54), hit.impact.y - 6, hit.impact.x + (isKick ? 78 : 54), hit.impact.y + 6);
+    this.fx.lineBetween(hit.impact.x - 8, hit.impact.y - (isKick ? 54 : 38), hit.impact.x + 8, hit.impact.y + (isKick ? 54 : 38));
     this.time.delayedCall(isKick ? 130 : 90, () => this.fx.clear());
   }
 
@@ -265,6 +285,8 @@ export class FightScene extends Phaser.Scene {
 
     this.finalBlowActive = true;
     this.pendingResultReveal = true;
+    this.finalBlowRevealAtMs = this.time.now + DEATH_ANIMATION_MS;
+    this.hud.setHidden(true);
     this.combatTimeScale = 0.08;
     const attacker = hit.attackerId === "player" ? snapshot.player : snapshot.enemy;
     this.spawnFinalBlowOverlay(hit, attacker.position.x, attacker.position.y);
@@ -284,7 +306,23 @@ export class FightScene extends Phaser.Scene {
       this.cameras.main.flash(180, 255, 255, 255, false);
       this.cameras.main.shake(180, 0.02);
     });
-    this.time.delayedCall(1280, () => this.resetFinalBlowFx());
+    this.time.delayedCall(DEATH_ANIMATION_MS, () => this.revealResultNow());
+  }
+
+  private revealResultIfFinalBlowExpired(snapshot: GameSnapshot) {
+    if (!this.finalBlowActive || !this.pendingResultReveal || (snapshot.roundState !== "won" && snapshot.roundState !== "lost")) {
+      return;
+    }
+    if (this.time.now >= this.finalBlowRevealAtMs) {
+      this.revealResultNow();
+    }
+  }
+
+  private revealResultNow() {
+    if (!this.pendingResultReveal && !this.finalBlowActive) {
+      return;
+    }
+    this.resetFinalBlowFx();
   }
 
   private spawnFinalBlowOverlay(hit: HitEvent, attackerX: number, attackerY: number) {
@@ -296,28 +334,15 @@ export class FightScene extends Phaser.Scene {
     overlay.fillStyle(color, 0.2);
     overlay.fillEllipse(attackerX, attackerY - 145, 360, 520);
 
-    const text = this.add
-      .text(GAME_WIDTH / 2, 118, "FINAL STRIKE", {
-        color: "#fff3b0",
-        fontFamily: "Trebuchet MS, Arial",
-        fontSize: "54px",
-        fontStyle: "900",
-        stroke: "#210817",
-        strokeThickness: 7
-      })
-      .setOrigin(0.5)
-      .setDepth(81)
-      .setScrollFactor(0)
-      .setShadow(0, 0, "#ff4d8d", 18, true, true);
-
-    this.finalBlowFx = [overlay, text];
-    this.tweens.add({ targets: text, scaleX: 1.12, scaleY: 1.12, duration: 140, yoyo: true, ease: "Back.easeOut" });
+    this.finalBlowFx = [overlay];
     this.tweens.add({ targets: overlay, alpha: 0.18, duration: 740, delay: 160, ease: "Cubic.easeIn" });
   }
 
   private resetFinalBlowFx() {
     this.combatTimeScale = 1;
     this.finalBlowActive = false;
+    this.finalBlowRevealAtMs = 0;
+    this.hud?.setHidden(false);
     this.clearFinalBlowOverlay();
     this.cameras.main.pan(GAME_WIDTH / 2, GAME_HEIGHT / 2, 180, "Cubic.easeOut");
     this.cameras.main.zoomTo(1, 180, "Cubic.easeOut");

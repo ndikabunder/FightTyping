@@ -56,4 +56,25 @@ describe("SkillSystem", () => {
     expect(system.syncWithCombo(consumed, 5).unlocked).toBe(false);
     expect(system.syncWithCombo(consumed, 6).unlocked).toBe(true);
   });
+
+  it("keeps a ready skill charged when combo breaks before use", () => {
+    const system = new SkillSystem();
+    const ready = system.syncWithCombo(createSkillState(3), 3);
+    const afterComboBreak = system.syncWithCombo(ready, 0);
+
+    expect(afterComboBreak.unlocked).toBe(true);
+    expect(afterComboBreak.progress).toBe(1);
+    expect(afterComboBreak.status).toBe("ready");
+  });
+
+  it("keeps skill charge and only clears typed text on skill miss", () => {
+    const system = new SkillSystem();
+    const ready = system.syncWithCombo(createSkillState(3), 3);
+    const first = system.handleKey(ready, ready.words.join("")[0]).skill;
+    const missed = system.handleKey(first, "x").skill;
+
+    expect(missed.unlocked).toBe(true);
+    expect(missed.progress).toBe(1);
+    expect(missed.typed).toBe("");
+  });
 });

@@ -1,3 +1,17 @@
+## Update Implementasi Terbaru - 2026-05-19
+
+- [x] Redesain Quest panel dengan state incomplete/complete, progress bar, status chip, dan motion clear satu kali.
+- [x] Hapus animasi status `IN PROGRESS` yang terasa bergetar; quest emphasis sekarang statis.
+- [x] Tambah tutorial briefing level 1-3: prompt limb, combo/wrong key, dan Neon Break.
+- [x] Tambah replay reward: medal `S/A/B/C`, `PERFECT QUEST ✦`, kolom medal leaderboard, dan `BEST BY LEVEL`.
+- [x] Hapus shortcut angka `0-9` untuk pindah level saat gameplay.
+- [x] Matikan debug hitbox/hurtbox sebagai default; tetap bisa toggle dengan `` ` ``.
+- [x] Polish typing feel: last typed char pop, prompt matching glow, variasi rate SFX typing/attack.
+- [x] Polish combat impact: hitstop punch/kick dinaikkan, spark/cross impact lokal diperkuat, full-screen flash hit biasa dihapus.
+- [x] Polish enemy warning: cooldown cue `WATCH/READY/DODGE NOW`, enemy skill cue `CHARGING/WARNING/DANGER`.
+- [x] Tune level pacing L1, L3-L6, L8-L10 untuk kurva introduce -> test -> remix -> mastery.
+- [x] Tambah/update regression tests untuk shortcut angka, prompt guard, skill guard, level pacing, dan leaderboard reward metadata.
+
 ## Update Implementasi Terbaru - 2026-05-18
 
 - [x] Refactor pemilihan spritesheet frame dari `FighterRenderer` ke `FighterFrameResolver`.

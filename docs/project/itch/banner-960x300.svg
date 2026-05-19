@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="300" viewBox="0 0 960 300" role="img" aria-label="Fight Typing itch banner">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#050914"/><stop offset="0.55" stop-color="#061521"/><stop offset="1" stop-color="#2a0718"/></linearGradient>
+    <linearGradient id="slash" x1="220" y1="280" x2="760" y2="20"><stop offset="0" stop-color="#7cf7ff"/><stop offset="0.5" stop-color="#fff3b0"/><stop offset="1" stop-color="#ff4d8d"/></linearGradient>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M48 0H0v48" fill="none" stroke="#7cf7ff" stroke-opacity="0.12"/></pattern>
+    <filter id="glow"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="960" height="300" fill="url(#bg)"/>
+  <rect width="960" height="300" fill="url(#grid)"/>
+  <path d="M170 294 720 -22h96L260 318Z" fill="url(#slash)" opacity="0.82" filter="url(#glow)"/>
+  <text x="480" y="115" text-anchor="middle" fill="#fff3b0" font-family="Trebuchet MS, Arial, sans-serif" font-size="72" font-weight="900" letter-spacing="4">FIGHT TYPING</text>
+  <text x="480" y="162" text-anchor="middle" fill="#e8fbff" font-family="Trebuchet MS, Arial, sans-serif" font-size="24" font-weight="900" letter-spacing="5">TYPE TO STRIKE · DODGE PRESSURE · CHASE MEDALS</text>
+  <g fill="none" stroke-linecap="round" stroke-width="12" opacity="0.85">
+    <path d="M105 220c55-70 120-70 175 0" stroke="#7cf7ff"/>
+    <path d="M680 220c55-70 120-70 175 0" stroke="#ff4d8d"/>
+  </g>
+  <rect x="325" y="204" width="310" height="44" rx="8" fill="#06101a" opacity="0.82" stroke="#ffd166" stroke-opacity="0.62"/>
+  <text x="480" y="232" text-anchor="middle" fill="#ffd166" font-family="Trebuchet MS, Arial, sans-serif" font-size="18" font-weight="900" letter-spacing="2">NEON IMPACT · LOCAL LEADERBOARD</text>
+</svg>

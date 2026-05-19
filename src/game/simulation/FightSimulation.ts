@@ -91,11 +91,6 @@ export class FightSimulation {
       return null;
     }
 
-    if (/^[0-9]$/.test(lower)) {
-      this.setLevel(lower === "0" ? 10 : Number(lower));
-      return null;
-    }
-
     if (lower === "`") {
       this.toggleDebug();
       return null;
@@ -231,7 +226,13 @@ export class FightSimulation {
       const countdownMs = Math.max(0, this.snapshot.countdownMs - deltaMs);
       this.snapshot = { ...this.snapshot, countdownMs };
       if (countdownMs === 0) {
-        this.snapshot = { ...this.snapshot, roundState: "fighting", prompts: this.promptSystem.createPrompts(this.snapshot.level.wordPoolTier) };
+        const prompts = this.promptSystem.createPrompts(this.snapshot.level.wordPoolTier);
+        this.snapshot = {
+          ...this.snapshot,
+          roundState: "fighting",
+          prompts,
+          dodgePrompt: this.promptSystem.createDodgePrompt(prompts.map((prompt) => prompt.text))
+        };
       }
       return null;
     }
@@ -463,7 +464,7 @@ export class FightSimulation {
       player: createFighter("player", fighterHome.playerX, fighterHome.y, 1),
       enemy,
       prompts: [],
-      dodgePrompt: this.promptSystem.createDodgePrompt(),
+      dodgePrompt: null,
       metrics: createTypingMetrics(),
       combo: createComboState(),
       skill: createSkillState(level.id),
@@ -474,7 +475,7 @@ export class FightSimulation {
       enemyAttackClockMs: 0,
       enemyAttackEveryMs: this.currentEnemyCooldownMs(),
       enemyIncomingAttackId: null,
-      debugEnabled: true,
+      debugEnabled: false,
       lastHit: null,
       level: this.createLevelRuntime(),
       feedback: { kind: "complete", label: level.objective, atMs: 0 }
@@ -632,7 +633,7 @@ export class FightSimulation {
     }
 
     const status: GameSnapshot["skill"]["status"] = skill.unlocked ? "ready" : "locked";
-    return { ...skill, typed: "", status, progress: 0, chargeBaseCombo: 0 };
+    return { ...skill, typed: "", status };
   }
 
   private gainComboForPrompt(combo: ComboState, prompt: PromptState, nowMs: number) {

@@ -2,15 +2,15 @@ import Phaser from "phaser";
 import type { ActionId } from "../../game/types";
 
 export const audioAssets = {
-  bgm: "/assets/sound/bgm.mp3",
-  kick: "/assets/sound/kick.mp3",
-  punch: "/assets/sound/punch.mp3",
-  typing: "/assets/sound/typing.mp3",
-  skill: "/assets/sound/skill.mp3",
-  transition: "/assets/sound/transition.mp3",
-  victory: "/assets/sound/victory.mp3",
-  defeat: "/assets/sound/defeat.mp3",
-  wrong: "/assets/sound/wrong.mp3"
+  bgm: "assets/sound/bgm.mp3",
+  kick: "assets/sound/kick.mp3",
+  punch: "assets/sound/punch.mp3",
+  typing: "assets/sound/typing.mp3",
+  skill: "assets/sound/skill.mp3",
+  transition: "assets/sound/transition.mp3",
+  victory: "assets/sound/victory.mp3",
+  defeat: "assets/sound/defeat.mp3",
+  wrong: "assets/sound/wrong.mp3"
 } as const;
 
 export type AudioKey = keyof typeof audioAssets;
@@ -22,13 +22,13 @@ export function audioKey(key: AudioKey) {
   return `${AUDIO_PREFIX}${key}`;
 }
 
-export function playSfx(scene: Phaser.Scene, key: Exclude<AudioKey, "bgm">, volume = 0.72) {
+export function playSfx(scene: Phaser.Scene, key: Exclude<AudioKey, "bgm">, volume = 0.72, rate = 1) {
   const fullKey = audioKey(key);
   if (!scene.cache.audio.exists(fullKey)) {
     return;
   }
 
-  scene.sound.play(fullKey, { volume });
+  scene.sound.play(fullKey, { volume, rate });
 }
 
 export function playTransitionSfx(scene: Phaser.Scene) {

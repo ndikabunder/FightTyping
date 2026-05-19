@@ -5,8 +5,12 @@ export interface LeaderboardEntry {
   timeMs: number;
   score: number;
   accuracy: number;
+  medal: Medal;
+  perfectQuest: boolean;
   at: string;
 }
+
+export type Medal = "S" | "A" | "B" | "C";
 
 const STORAGE_KEY = "fight-typing.leaderboard.v1";
 const MAX_ENTRIES = 10;
@@ -28,9 +32,11 @@ export function readLeaderboard(): LeaderboardEntry[] {
   }
 }
 
-export function saveLeaderboardEntry(entry: Omit<LeaderboardEntry, "id" | "at">) {
+export function saveLeaderboardEntry(entry: Omit<LeaderboardEntry, "id" | "at" | "medal" | "perfectQuest">) {
   const nextEntry: LeaderboardEntry = {
     ...entry,
+    medal: medalForRun(entry.levelCompleted, entry.accuracy, entry.score),
+    perfectQuest: entry.accuracy >= 100,
     id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
     at: new Date().toISOString()
   };
@@ -60,6 +66,30 @@ export function formatTime(timeMs: number) {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
+export function medalForRun(levelCompleted: number, accuracy: number, score: number): Medal {
+  if (levelCompleted >= 10 && accuracy >= 96) {
+    return "S";
+  }
+  if (levelCompleted >= 7 && accuracy >= 90 && score >= 12000) {
+    return "A";
+  }
+  if (levelCompleted >= 4 && accuracy >= 80) {
+    return "B";
+  }
+  return "C";
+}
+
+export function bestByLevel(entries: LeaderboardEntry[]) {
+  const best = new Map<number, LeaderboardEntry>();
+  entries.forEach((entry) => {
+    const current = best.get(entry.levelCompleted);
+    if (!current || compareLeaderboard(entry, current) < 0) {
+      best.set(entry.levelCompleted, entry);
+    }
+  });
+  return [...best.values()].sort((a, b) => b.levelCompleted - a.levelCompleted);
+}
+
 function normalizeEntries(entries: LeaderboardEntry[]) {
   if (!Array.isArray(entries)) {
     return [];
@@ -67,6 +97,11 @@ function normalizeEntries(entries: LeaderboardEntry[]) {
 
   return entries
     .filter((entry) => typeof entry.player === "string" && Number.isFinite(entry.levelCompleted))
+    .map((entry) => ({
+      ...entry,
+      medal: entry.medal ?? medalForRun(entry.levelCompleted, entry.accuracy, entry.score),
+      perfectQuest: entry.perfectQuest ?? entry.accuracy >= 100
+    }))
     .sort(compareLeaderboard)
     .slice(0, MAX_ENTRIES);
 }
