@@ -4,7 +4,6 @@ import type { GameSnapshot, PromptState } from "../../game/types";
 
 const LOGICAL_WIDTH = 1280;
 const LOGICAL_HEIGHT = 720;
-const LEVEL_INTRO_MS = 360;
 
 const promptOffsets = {
   leftHand: { x: -168, y: -172 },
@@ -19,7 +18,6 @@ export class HudController {
   private lastComboSerial = 0;
   private comboAnimation: { serial: number; startedAtMs: number; durationMs: number } | null = null;
   private comboAnimationFrame: number | null = null;
-  private countdownIntroStartedAtMs: number | null = null;
   private lastObjectiveCompleted = false;
   private questCompleteMotionUntilMs = 0;
 
@@ -33,7 +31,8 @@ export class HudController {
   }
 
   render(snapshot: GameSnapshot, options: { suppressResult?: boolean } = {}) {
-    const showCombatOverlays = snapshot.roundState !== "won" && snapshot.roundState !== "lost";
+    const showCombatOverlays = snapshot.roundState !== "won" && snapshot.roundState !== "lost" && snapshot.roundState !== "briefing";
+    const showHudBars = snapshot.roundState !== "briefing";
     const objectiveCompleted = snapshot.level.objectiveProgress.completed;
     const nowMs = performance.now();
 
@@ -55,6 +54,7 @@ export class HudController {
     const questStatusLabel = objectiveCompleted ? "CLEAR" : "IN PROGRESS";
     const questEmphasisClass = !objectiveCompleted && snapshot.level.objectiveProgress.current === 0 ? "needs-attention" : "";
     this.root.innerHTML = `
+      ${showHudBars ? `
       <div class="hud-bars">
         ${this.hpBar("PLAYER", snapshot.player.hp, snapshot.player.maxHp, "player")}
         <div class="round-state">${this.roundLabel(snapshot)}</div>
@@ -81,6 +81,7 @@ export class HudController {
         </div>
         ${this.comboBadge(snapshot)}
       </div>
+      ` : ""}
       ${showCombatOverlays ? this.combatOverlays(snapshot) : ""}
       ${this.briefingOverlay(snapshot)}
       ${options.suppressResult ? "" : this.resultOverlay(snapshot)}
@@ -116,26 +117,37 @@ export class HudController {
   }
 
   private briefingOverlay(snapshot: GameSnapshot) {
+    if (snapshot.roundState === "briefing") {
+      return `
+        <div class="briefing-overlay level-intro">
+          <div class="briefing-card">
+            <div class="briefing-col-level">
+              <small>Stage</small>
+              <h1>Level ${snapshot.level.id}</h1>
+              <span>${snapshot.level.enemyName}</span>
+            </div>
+            <div class="briefing-col-quest">
+              <small>Quest</small>
+              <strong>${snapshot.level.objective}</strong>
+              <span>${snapshot.level.focus}</span>
+              ${this.tutorialHint(snapshot.level.id)}
+            </div>
+          </div>
+          <div class="briefing-start-hint">Press SPACE to start</div>
+        </div>
+      `;
+    }
+
     if (snapshot.roundState !== "countdown") {
-      this.countdownIntroStartedAtMs = null;
       return "";
     }
-    this.countdownIntroStartedAtMs ??= performance.now();
-    const isLevelIntro = performance.now() - this.countdownIntroStartedAtMs < LEVEL_INTRO_MS;
 
     return `
-      <div class="briefing-overlay ${isLevelIntro ? "level-intro" : "fight-countdown"}">
+      <div class="briefing-overlay fight-countdown">
         <div class="briefing-level-splash">
           <strong>Level ${snapshot.level.id}</strong>
         </div>
-        <div class="briefing-countdown">${isLevelIntro ? "" : this.countdownValue(snapshot)}</div>
-        <div class="briefing-card">
-          <small>Quest Start</small>
-          <h1>Level ${snapshot.level.id}</h1>
-          <strong>${snapshot.level.objective}</strong>
-          <span>${snapshot.level.enemyName} - ${snapshot.level.focus}</span>
-          ${this.tutorialHint(snapshot.level.id)}
-        </div>
+        <div class="briefing-countdown">${this.countdownValue(snapshot)}</div>
       </div>
     `;
   }

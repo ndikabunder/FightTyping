@@ -5,7 +5,7 @@ import { PromptSystem } from "../systems/PromptSystem";
 import { createSkillState, SkillSystem } from "../systems/SkillSystem";
 import { createTypingMetrics, TypingSystem } from "../systems/TypingSystem";
 import { createFighter } from "./createFighter";
-import { attackMovement, dodgeRules, enemyDodgeRules, enemySkillRules, fighterHome, hitStopRules, pacingRules, playerSkillRules, scoringRules } from "../content/fightRules";
+import { attackMovement, countdownRules, dodgeRules, enemyDodgeRules, enemySkillRules, fighterHome, hitStopRules, pacingRules, playerSkillRules, scoringRules } from "../content/fightRules";
 import type { ActionId, CombatFeedback, ComboState, EnemySkillState, GameSnapshot, HitEvent, LevelRuntimeState, PromptState, TypingMetrics } from "../types";
 
 export class FightSimulation {
@@ -81,6 +81,11 @@ export class FightSimulation {
   handleKey(key: string, nowMs: number): HitEvent | null {
     const lower = key.toLowerCase();
 
+    if (key === " " && this.snapshot.roundState === "briefing") {
+      this.snapshot = { ...this.snapshot, roundState: "countdown" };
+      return null;
+    }
+
     if (lower === "r" && (this.snapshot.roundState === "won" || this.snapshot.roundState === "lost")) {
       this.restart();
       return null;
@@ -108,6 +113,11 @@ export class FightSimulation {
     const allPrompts = this.snapshot.dodgePrompt
       ? [...this.snapshot.prompts, this.snapshot.dodgePrompt]
       : this.snapshot.prompts;
+
+    if (key === "Backspace" && this.snapshot.skill.typed.length > 0) {
+      this.snapshot = { ...this.snapshot, skill: { ...this.snapshot.skill, typed: "", status: "ready" } };
+      return null;
+    }
 
     if (this.shouldHandleSkillKey(key, allPrompts)) {
       this.handleSkillKey(key, nowMs);
@@ -213,7 +223,7 @@ export class FightSimulation {
   }
 
   update(deltaMs: number, nowMs: number): HitEvent | null {
-    if (this.snapshot.roundState === "paused" || this.snapshot.roundState === "won" || this.snapshot.roundState === "lost") {
+    if (this.snapshot.roundState === "briefing" || this.snapshot.roundState === "paused" || this.snapshot.roundState === "won" || this.snapshot.roundState === "lost") {
       return null;
     }
 
@@ -469,8 +479,8 @@ export class FightSimulation {
       combo: createComboState(),
       skill: createSkillState(level.id),
       enemySkill: this.createEnemySkillState(level.id),
-      roundState: "countdown",
-      countdownMs: 1800,
+      roundState: "briefing",
+      countdownMs: countdownRules.totalMs,
       enemyTelegraphMs: 0,
       enemyAttackClockMs: 0,
       enemyAttackEveryMs: this.currentEnemyCooldownMs(),

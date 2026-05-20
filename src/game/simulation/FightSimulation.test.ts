@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FightSimulation } from "./FightSimulation";
-import { enemySkillRules, fighterHome } from "../content/fightRules";
+import { countdownRules, enemySkillRules, fighterHome } from "../content/fightRules";
 import { attacks } from "../content/attacks";
 
 describe("FightSimulation", () => {
@@ -8,9 +8,14 @@ describe("FightSimulation", () => {
     vi.restoreAllMocks();
   });
 
+  function skipToFighting(sim: FightSimulation) {
+    sim.handleKey(" ", 0);
+    sim.update(countdownRules.totalMs, countdownRules.totalMs);
+  }
+
   it("returns player to home position after dodge window", () => {
     const sim = new FightSimulation();
-    sim.update(1800, 1800);
+    skipToFighting(sim);
     const dodge = sim.getSnapshot().dodgePrompt?.text;
     expect(dodge).toBeTruthy();
 
@@ -28,7 +33,7 @@ describe("FightSimulation", () => {
 
   it("advances enemy cooldown smoothly while fighting", () => {
     const sim = new FightSimulation();
-    sim.update(1800, 1800);
+    skipToFighting(sim);
     sim.update(100, 1900);
     const first = sim.getSnapshot().enemyAttackClockMs;
     sim.update(100, 2000);
@@ -39,8 +44,9 @@ describe("FightSimulation", () => {
   });
 
   it("tracks combo outside typing metrics and resets it on wrong input", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.5);
     const sim = new FightSimulation();
-    sim.update(1800, 1800);
+    skipToFighting(sim);
     const prompt = sim.getSnapshot().prompts[0];
 
     for (const char of prompt.text) {
@@ -62,7 +68,7 @@ describe("FightSimulation", () => {
   it("gives left punch extra combo and left kick delays enemy pressure", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
     const sim = new FightSimulation();
-    sim.update(1800, 1800);
+    skipToFighting(sim);
 
     const leftPunch = sim.getSnapshot().prompts.find((prompt) => prompt.actionId === "attack.punch.left");
     expect(leftPunch).toBeTruthy();
@@ -87,7 +93,7 @@ describe("FightSimulation", () => {
 
   it("keeps player forward until the strike animation finishes, then returns home", () => {
     const sim = new FightSimulation();
-    sim.update(1800, 1800);
+    skipToFighting(sim);
     const prompt = sim.getSnapshot().prompts[0];
 
     for (const char of prompt.text) {
@@ -111,7 +117,7 @@ describe("FightSimulation", () => {
 
   it("varies enemy attacks and keeps enemy forward until its strike animation finishes", () => {
     const sim = new FightSimulation();
-    sim.update(1800, 1800);
+    skipToFighting(sim);
 
     sim.update(5600, 7400);
     expect(sim.getSnapshot().enemy.visualActionId).toBe("attack.punch.right");
@@ -157,7 +163,7 @@ describe("FightSimulation", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
     const sim = new FightSimulation();
     sim.setLevel(7);
-    sim.update(1800, 1800);
+    skipToFighting(sim);
 
     expect(sim.getSnapshot().enemyAttackEveryMs).toBe(Math.round(3200 * 0.82));
     expect(sim.getSnapshot().level.objectiveProgress.label).toBe("Combo x8");
@@ -181,7 +187,7 @@ describe("FightSimulation", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
     const sim = new FightSimulation();
     sim.setLevel(3);
-    sim.update(1800, 1800);
+    skipToFighting(sim);
 
     let guard = 0;
     while (!sim.getSnapshot().skill.unlocked && guard < 6) {
@@ -212,13 +218,13 @@ describe("FightSimulation", () => {
   it("enables enemy skill on level 6 with triple normal cooldown and double damage", () => {
     const sim = new FightSimulation();
     sim.setLevel(6);
-    sim.update(1800, 1800);
+    skipToFighting(sim);
 
     expect(sim.getSnapshot().enemySkill.available).toBe(true);
     expect(sim.getSnapshot().enemySkill.cooldownMs).toBe(Math.round(3600 * 0.82 * enemySkillRules.cooldownMultiplier));
 
     const enemySkillCooldownMs = sim.getSnapshot().enemySkill.cooldownMs;
-    sim.update(enemySkillCooldownMs, 1800 + enemySkillCooldownMs);
+    sim.update(enemySkillCooldownMs, countdownRules.totalMs + enemySkillCooldownMs);
 
     expect(sim.getSnapshot().enemySkill.usedSerial).toBe(1);
     expect(sim.getSnapshot().enemySkill.clockMs).toBe(0);
@@ -234,7 +240,7 @@ describe("FightSimulation", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
     const sim = new FightSimulation();
     sim.setLevel(1);
-    sim.update(1800, 1800);
+    skipToFighting(sim);
 
     let guard = 0;
     while (sim.getSnapshot().roundState === "fighting" && guard < 20) {
@@ -258,7 +264,7 @@ describe("FightSimulation", () => {
   it("resets partial typing progress when an enemy hit interrupts the player", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
     const sim = new FightSimulation();
-    sim.update(1800, 1800);
+    skipToFighting(sim);
     const prompt = sim.getSnapshot().prompts[0];
 
     sim.handleKey(prompt.text[0], 2000);
@@ -274,7 +280,7 @@ describe("FightSimulation", () => {
   it("breaks combo when an enemy hit lands", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
     const sim = new FightSimulation();
-    sim.update(1800, 1800);
+    skipToFighting(sim);
     const prompt = sim.getSnapshot().prompts[0];
 
     for (const char of prompt.text) {
@@ -293,7 +299,7 @@ describe("FightSimulation", () => {
   it("lets enemy dodge at most once in a four player attack window", () => {
     vi.spyOn(Math, "random").mockReturnValue(0);
     const sim = new FightSimulation();
-    sim.update(1800, 1800);
+    skipToFighting(sim);
 
     const completeFirstPrompt = (nowMs: number) => {
       const prompt = sim.getSnapshot().prompts[0];

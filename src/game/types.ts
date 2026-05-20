@@ -169,7 +169,7 @@ export interface GameSnapshot {
   combo: ComboState;
   skill: SkillState;
   enemySkill: EnemySkillState;
-  roundState: "countdown" | "fighting" | "won" | "lost" | "paused";
+  roundState: "briefing" | "countdown" | "fighting" | "won" | "lost" | "paused";
   countdownMs: number;
   enemyTelegraphMs: number;
   enemyAttackClockMs: number;

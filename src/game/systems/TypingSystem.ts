@@ -35,6 +35,15 @@ export class TypingSystem {
   }
 
   handleKey(prompts: PromptState[], metrics: TypingMetrics, key: string, nowMs: number): TypingResult {
+    if (key === "Backspace" && this.lockedPromptId) {
+      const resetPrompts = prompts.map((p) =>
+        p.id === this.lockedPromptId ? { ...p, typed: "", status: "idle" as const } : p
+      );
+      this.lockedPromptId = null;
+      this.promptStartedAtMs = 0;
+      return { prompts: resetPrompts, metrics, completedPrompt: null, wrong: false, wrongPromptId: null };
+    }
+
     const char = normalizeKey(key);
 
     if (!char) {

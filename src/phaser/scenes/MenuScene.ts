@@ -74,10 +74,9 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     drawButton(bg, 300, 58, 0x7cf7ff, 0.72);
-    container.add([bg, text, shortcut]);
-    container.setSize(300, 58);
-    container.setInteractive({ useHandCursor: true });
-    container.on("pointerover", () => {
+    const hitZone = this.add.zone(0, 0, 300, 58).setInteractive({ useHandCursor: true });
+    container.add([bg, text, shortcut, hitZone]);
+    hitZone.on("pointerover", () => {
       if (this.transitioning) {
         return;
       }
@@ -86,7 +85,7 @@ export class MenuScene extends Phaser.Scene {
       text.setColor("#fff3b0");
       shortcut.setColor("#fff3b0");
     });
-    container.on("pointerout", () => {
+    hitZone.on("pointerout", () => {
       if (this.transitioning) {
         return;
       }
@@ -95,7 +94,7 @@ export class MenuScene extends Phaser.Scene {
       text.setColor("#e8fbff");
       shortcut.setColor("rgba(124, 247, 255, 0.74)");
     });
-    container.on("pointerdown", () => {
+    hitZone.on("pointerdown", () => {
       if (!this.transitioning) {
         onClick();
       }

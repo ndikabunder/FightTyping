@@ -1,3 +1,7 @@
+export const countdownRules = {
+  totalMs: 1800
+} as const;
+
 export const fighterHome = {
   playerX: 430,
   enemyX: 850,
@@ -7,7 +11,7 @@ export const fighterHome = {
 export const attackMovement = {
   spacing: 118,
   maxDash: 300,
-  visualLockMs: 720
+  visualLockMs: 480
 } as const;
 
 export const dodgeRules = {
