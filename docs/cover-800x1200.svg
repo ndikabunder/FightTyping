@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1200" viewBox="0 0 800 1200" role="img" aria-label="Fight Typing cover 800x1200">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#06101a"/><stop offset="0.4" stop-color="#12091f"/><stop offset="0.7" stop-color="#060913"/><stop offset="1" stop-color="#210718"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="glow-strong"><feGaussianBlur stdDeviation="12" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <linearGradient id="slash" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#7cf7ff"/><stop offset="0.5" stop-color="#fff3b0"/><stop offset="1" stop-color="#ff4d8d"/></linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="1200" fill="url(#bg)"/>
+
+  <!-- Grid -->
+  <g stroke="#7cf7ff" stroke-opacity="0.08" stroke-width="1">
+    <line x1="44" y1="0" x2="44" y2="1200"/><line x1="88" y1="0" x2="88" y2="1200"/>
+    <line x1="132" y1="0" x2="132" y2="1200"/><line x1="176" y1="0" x2="176" y2="1200"/>
+    <line x1="220" y1="0" x2="220" y2="1200"/><line x1="264" y1="0" x2="264" y2="1200"/>
+    <line x1="308" y1="0" x2="308" y2="1200"/><line x1="352" y1="0" x2="352" y2="1200"/>
+    <line x1="396" y1="0" x2="396" y2="1200"/><line x1="440" y1="0" x2="440" y2="1200"/>
+    <line x1="484" y1="0" x2="484" y2="1200"/><line x1="528" y1="0" x2="528" y2="1200"/>
+    <line x1="572" y1="0" x2="572" y2="1200"/><line x1="616" y1="0" x2="616" y2="1200"/>
+    <line x1="660" y1="0" x2="660" y2="1200"/><line x1="704" y1="0" x2="704" y2="1200"/>
+    <line x1="748" y1="0" x2="748" y2="1200"/>
+    <line x1="0" y1="42" x2="800" y2="42"/><line x1="0" y1="84" x2="800" y2="84"/>
+    <line x1="0" y1="126" x2="800" y2="126"/><line x1="0" y1="168" x2="800" y2="168"/>
+    <line x1="0" y1="210" x2="800" y2="210"/><line x1="0" y1="252" x2="800" y2="252"/>
+    <line x1="0" y1="294" x2="800" y2="294"/><line x1="0" y1="336" x2="800" y2="336"/>
+    <line x1="0" y1="378" x2="800" y2="378"/><line x1="0" y1="420" x2="800" y2="420"/>
+    <line x1="0" y1="462" x2="800" y2="462"/><line x1="0" y1="504" x2="800" y2="504"/>
+    <line x1="0" y1="546" x2="800" y2="546"/><line x1="0" y1="588" x2="800" y2="588"/>
+    <line x1="0" y1="630" x2="800" y2="630"/><line x1="0" y1="672" x2="800" y2="672"/>
+    <line x1="0" y1="714" x2="800" y2="714"/><line x1="0" y1="756" x2="800" y2="756"/>
+    <line x1="0" y1="798" x2="800" y2="798"/><line x1="0" y1="840" x2="800" y2="840"/>
+    <line x1="0" y1="882" x2="800" y2="882"/><line x1="0" y1="924" x2="800" y2="924"/>
+    <line x1="0" y1="966" x2="800" y2="966"/><line x1="0" y1="1008" x2="800" y2="1008"/>
+    <line x1="0" y1="1050" x2="800" y2="1050"/><line x1="0" y1="1092" x2="800" y2="1092"/>
+    <line x1="0" y1="1134" x2="800" y2="1134"/><line x1="0" y1="1176" x2="800" y2="1176"/>
+  </g>
+
+  <!-- Diagonal slash -->
+  <path d="M-20 1100 620 100h120L100 1120Z" fill="url(#slash)" opacity="0.6" filter="url(#glow)"/>
+
+  <!-- Title -->
+  <text x="400" y="160" text-anchor="middle" fill="#fff3b0" font-family="Trebuchet MS, Arial, sans-serif" font-size="82" font-weight="900" filter="url(#glow-strong)">FIGHT</text>
+  <text x="400" y="260" text-anchor="middle" fill="#fff3b0" font-family="Trebuchet MS, Arial, sans-serif" font-size="82" font-weight="900" filter="url(#glow-strong)">TYPING</text>
+
+  <!-- Subtitle -->
+  <text x="400" y="320" text-anchor="middle" fill="#7cf7ff" font-family="Trebuchet MS, Arial, sans-serif" font-size="22" font-weight="800" filter="url(#glow)">TYPE FAST. STRIKE CLEAN.</text>
+
+  <!-- Player fighter (left, cyan) -->
+  <g transform="translate(240, 680)" filter="url(#glow)" opacity="0.92">
+    <ellipse cx="0" cy="10" rx="70" ry="12" fill="#7cf7ff" opacity="0.1"/>
+    <ellipse cx="0" cy="-180" rx="72" ry="72" fill="none" stroke="#42d9ff" stroke-width="2" opacity="0.2"/>
+    <g stroke="#42d9ff" stroke-width="4" fill="none">
+      <circle cx="4" cy="-280" r="26"/>
+      <line x1="4" y1="-254" x2="0" y2="-160"/>
+      <line x1="0" y1="-160" x2="0" y2="-80"/>
+      <line x1="-34" y1="-220" x2="38" y2="-218"/>
+      <line x1="-34" y1="-220" x2="-68" y2="-175"/>
+      <line x1="-68" y1="-175" x2="-50" y2="-140"/>
+      <line x1="38" y1="-218" x2="80" y2="-180"/>
+      <line x1="80" y1="-180" x2="110" y2="-155"/>
+      <line x1="0" y1="-80" x2="-34" y2="-20"/>
+      <line x1="-34" y1="-20" x2="-46" y2="10"/>
+      <line x1="0" y1="-80" x2="34" y2="-20"/>
+      <line x1="34" y1="-20" x2="46" y2="10"/>
+    </g>
+    <g fill="#7cf7ff">
+      <circle cx="4" cy="-280" r="4" opacity="0.7"/>
+      <circle cx="-34" cy="-220" r="3"/><circle cx="38" cy="-218" r="3"/>
+      <circle cx="-68" cy="-175" r="3"/><circle cx="80" cy="-180" r="3"/>
+      <circle cx="110" cy="-155" r="4"/>
+      <circle cx="0" cy="-80" r="3"/>
+    </g>
+  </g>
+
+  <!-- Enemy fighter (right, pink, flipped) -->
+  <g transform="translate(560, 680) scale(-1,1)" filter="url(#glow)" opacity="0.86">
+    <ellipse cx="0" cy="10" rx="70" ry="12" fill="#ff4d8d" opacity="0.1"/>
+    <ellipse cx="0" cy="-180" rx="72" ry="72" fill="none" stroke="#ff70c7" stroke-width="2" opacity="0.2"/>
+    <g stroke="#ff70c7" stroke-width="4" fill="none">
+      <circle cx="4" cy="-280" r="26"/>
+      <line x1="4" y1="-254" x2="0" y2="-160"/>
+      <line x1="0" y1="-160" x2="0" y2="-80"/>
+      <line x1="-34" y1="-220" x2="38" y2="-218"/>
+      <line x1="-34" y1="-220" x2="-68" y2="-175"/>
+      <line x1="-68" y1="-175" x2="-50" y2="-140"/>
+      <line x1="38" y1="-218" x2="74" y2="-185"/>
+      <line x1="74" y1="-185" x2="56" y2="-150"/>
+      <line x1="0" y1="-80" x2="-50" y2="-30"/>
+      <line x1="-50" y1="-30" x2="-100" y2="-20"/>
+      <line x1="0" y1="-80" x2="34" y2="-20"/>
+      <line x1="34" y1="-20" x2="40" y2="10"/>
+    </g>
+    <g fill="#ff4d8d">
+      <circle cx="4" cy="-280" r="4" opacity="0.7"/>
+      <circle cx="-34" cy="-220" r="3"/><circle cx="38" cy="-218" r="3"/>
+      <circle cx="-68" cy="-175" r="3"/><circle cx="74" cy="-185" r="3"/>
+      <circle cx="-100" cy="-20" r="4"/>
+      <circle cx="0" cy="-80" r="3"/>
+    </g>
+  </g>
+
+  <!-- Impact burst between fighters -->
+  <g transform="translate(400, 560)" filter="url(#glow)" opacity="0.7">
+    <line x1="-30" y1="0" x2="30" y2="0" stroke="#fff3b0" stroke-width="3"/>
+    <line x1="0" y1="-24" x2="0" y2="24" stroke="#fff3b0" stroke-width="2"/>
+    <line x1="-18" y1="-18" x2="18" y2="18" stroke="#7cf7ff" stroke-width="2" opacity="0.6"/>
+    <line x1="18" y1="-18" x2="-18" y2="18" stroke="#ff4d8d" stroke-width="2" opacity="0.6"/>
+    <circle cx="0" cy="0" r="8" fill="#fff3b0" opacity="0.4"/>
+  </g>
+
+  <!-- Prompt cards -->
+  <g opacity="0.9">
+    <rect x="80" y="780" width="140" height="46" rx="7" fill="#06101a" opacity="0.85" stroke="#7cf7ff" stroke-opacity="0.7" stroke-width="1.5"/>
+    <text x="96" y="800" fill="#7cf7ff" font-family="Trebuchet MS, Arial, sans-serif" font-size="11" opacity="0.7">Right Hand</text>
+    <text x="96" y="818" fill="#ffffff" font-family="Trebuchet MS, Arial, sans-serif" font-size="17" font-weight="bold">jab</text>
+
+    <rect x="300" y="810" width="140" height="46" rx="7" fill="#06101a" opacity="0.85" stroke="#7cf7ff" stroke-opacity="0.7" stroke-width="1.5"/>
+    <text x="316" y="830" fill="#7cf7ff" font-family="Trebuchet MS, Arial, sans-serif" font-size="11" opacity="0.7">Left Leg</text>
+    <text x="316" y="848" fill="#ffffff" font-family="Trebuchet MS, Arial, sans-serif" font-size="17" font-weight="bold">swing</text>
+
+    <rect x="540" y="780" width="150" height="46" rx="7" fill="#06101a" opacity="0.85" stroke="#ffd166" stroke-opacity="0.7" stroke-width="1.5"/>
+    <text x="556" y="800" fill="#ffd166" font-family="Trebuchet MS, Arial, sans-serif" font-size="11" opacity="0.7">Backstep</text>
+    <text x="556" y="818" fill="#ffffff" font-family="Trebuchet MS, Arial, sans-serif" font-size="17" font-weight="bold">dodge</text>
+  </g>
+
+  <!-- Bottom section -->
+  <text x="400" y="980" text-anchor="middle" fill="#e8fbff" font-family="Trebuchet MS, Arial, sans-serif" font-size="20" font-weight="800" letter-spacing="4" filter="url(#glow)">TYPE TO STRIKE</text>
+
+  <!-- Feature tags -->
+  <rect x="160" y="1040" width="480" height="48" rx="8" fill="#06101a" opacity="0.8" stroke="#ffd166" stroke-opacity="0.5" stroke-width="1.5"/>
+  <text x="400" y="1070" text-anchor="middle" fill="#ffd166" font-family="Trebuchet MS, Arial, sans-serif" font-size="16" font-weight="900" letter-spacing="2">NEON IMPACT &#x2022; LEADERBOARD &#x2022; 10 LEVELS</text>
+
+  <!-- Footer -->
+  <text x="400" y="1150" text-anchor="middle" fill="#e8fbff" font-family="Trebuchet MS, Arial, sans-serif" font-size="14" opacity="0.45">Keyboard duel prototype - Phaser 4</text>
+
+  <!-- Corner accents -->
+  <g stroke="#7cf7ff" stroke-width="1.5" fill="none" opacity="0.35">
+    <polyline points="24,50 24,24 50,24"/>
+    <polyline points="776,50 776,24 750,24"/>
+    <polyline points="24,1150 24,1176 50,1176"/>
+    <polyline points="776,1150 776,1176 750,1176"/>
+  </g>
+</svg>

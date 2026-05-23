@@ -170,14 +170,16 @@ describe("FightSimulation", () => {
 
     let guard = 0;
     while (!sim.getSnapshot().level.objectiveProgress.completed && guard < 8) {
-      const prompt = sim.getSnapshot().prompts[0];
+      const nowMs = 2000 + guard * 2100;
+      sim.update(0, nowMs);
+      const prompt = sim.getSnapshot().prompts.find((p) => p.status !== "cooldown")!;
       for (const char of prompt.text) {
-        sim.handleKey(char, 2000 + guard * 200);
+        sim.handleKey(char, nowMs);
       }
       guard += 1;
     }
 
-    sim.update(0, 4200);
+    sim.update(0, 2000 + guard * 2100);
 
     expect(sim.getSnapshot().level.objectiveProgress.completed).toBe(true);
     expect(sim.getSnapshot().level.objectiveProgress.current).toBe(8);
@@ -191,9 +193,11 @@ describe("FightSimulation", () => {
 
     let guard = 0;
     while (!sim.getSnapshot().skill.unlocked && guard < 6) {
-      const prompt = sim.getSnapshot().prompts[0];
+      const nowMs = 2000 + guard * 2100;
+      sim.update(0, nowMs);
+      const prompt = sim.getSnapshot().prompts.find((p) => p.status !== "cooldown")!;
       for (const char of prompt.text) {
-        sim.handleKey(char, 2000 + guard * 120);
+        sim.handleKey(char, nowMs);
       }
       guard += 1;
     }
@@ -244,13 +248,15 @@ describe("FightSimulation", () => {
 
     let guard = 0;
     while (sim.getSnapshot().roundState === "fighting" && guard < 20) {
-      const prompt = sim.getSnapshot().prompts.find((candidate) => candidate.actionId === "attack.kick.right");
-      expect(prompt).toBeTruthy();
-      for (const char of prompt!.text) {
-        sim.handleKey(char, 2200 + guard * 700);
+      const nowMs = 2200 + guard * 2200;
+      sim.update(0, nowMs);
+      const prompt = sim.getSnapshot().prompts.find((candidate) => candidate.status !== "cooldown" && candidate.actionId === "attack.kick.right");
+      if (!prompt) { guard += 1; continue; }
+      for (const char of prompt.text) {
+        sim.handleKey(char, nowMs);
       }
-      advanceUntilImpact(sim, 2200 + guard * 700);
-      sim.update(380, 2600 + guard * 700);
+      advanceUntilImpact(sim, nowMs);
+      sim.update(380, nowMs + 400);
       guard += 1;
     }
 
@@ -301,24 +307,25 @@ describe("FightSimulation", () => {
     const sim = new FightSimulation();
     skipToFighting(sim);
 
-    const completeFirstPrompt = (nowMs: number) => {
-      const prompt = sim.getSnapshot().prompts[0];
+    const completeAvailablePrompt = (nowMs: number) => {
+      sim.update(0, nowMs);
+      const prompt = sim.getSnapshot().prompts.find((p) => p.status !== "cooldown")!;
       for (const char of prompt.text) {
         sim.handleKey(char, nowMs);
       }
     };
 
-    completeFirstPrompt(2000);
+    completeAvailablePrompt(2000);
     advanceUntilImpact(sim, 2160);
 
     expect(sim.getSnapshot().feedback?.label).toBe("Enemy Evade");
     expect(sim.getSnapshot().lastHit).toBeNull();
     expect(sim.getSnapshot().enemy.hp).toBe(80);
 
-    sim.update(1100, 3320);
+    sim.update(2200, 4360);
 
-    completeFirstPrompt(3500);
-    advanceUntilImpact(sim, 3660);
+    completeAvailablePrompt(4500);
+    advanceUntilImpact(sim, 4660);
 
     expect(sim.getSnapshot().lastHit?.attackerId).toBe("player");
     expect(sim.getSnapshot().enemy.hp).toBeLessThan(80);

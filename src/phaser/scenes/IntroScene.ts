@@ -4,6 +4,7 @@ import { GAME_HEIGHT, GAME_WIDTH } from "../config";
 
 export class IntroScene extends Phaser.Scene {
   private skipped = false;
+  private readonly onWindowKey = () => this.goToMenu();
 
   constructor() {
     super("IntroScene");
@@ -16,6 +17,8 @@ export class IntroScene extends Phaser.Scene {
 
     this.input.keyboard?.once("keydown", () => this.goToMenu());
     this.input.once("pointerdown", () => this.goToMenu());
+    // Window-level fallback for iframe contexts
+    window.addEventListener("keydown", this.onWindowKey, { once: true });
     this.time.delayedCall(2300, () => this.goToMenu());
   }
 
@@ -118,6 +121,7 @@ export class IntroScene extends Phaser.Scene {
     }
 
     this.skipped = true;
+    window.removeEventListener("keydown", this.onWindowKey);
     playTransitionSfx(this);
     this.cameras.main.fadeOut(180, 3, 7, 18);
     this.time.delayedCall(180, () => this.scene.start("MenuScene"));

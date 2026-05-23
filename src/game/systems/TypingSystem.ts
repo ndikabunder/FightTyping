@@ -118,8 +118,8 @@ export class TypingSystem {
   }
 
   private findLockCandidate(prompts: PromptState[], char: string) {
-    const matches = prompts.filter((prompt) => prompt.text[0]?.toLowerCase() === char);
-    return matches.length === 1 ? matches[0] : null;
+    const matches = prompts.filter((prompt) => prompt.status !== "cooldown" && prompt.text[0]?.toLowerCase() === char);
+    return matches.length >= 1 ? matches[0] : null;
   }
 }
 

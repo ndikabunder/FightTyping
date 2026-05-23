@@ -75,7 +75,7 @@ export interface Fighter {
   hurtbox: Rect;
 }
 
-export type PromptStatus = "idle" | "matching" | "wrong" | "completed";
+export type PromptStatus = "idle" | "matching" | "wrong" | "completed" | "cooldown";
 
 export interface PromptState {
   id: string;
@@ -86,6 +86,7 @@ export interface PromptState {
   typed: string;
   status: PromptStatus;
   completedAtMs?: number;
+  cooldownUntilMs?: number;
 }
 
 export interface TypingMetrics {

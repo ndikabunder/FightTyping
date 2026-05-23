@@ -18,6 +18,8 @@ export class PreloadScene extends Phaser.Scene {
   }
 
   create() {
+    document.getElementById("loading-screen")?.classList.add("hidden");
+
     const loading = this.add
       .text(640, 360, "Loading Fight Typing...", {
         color: "#f8f0d8",
@@ -28,7 +30,7 @@ export class PreloadScene extends Phaser.Scene {
 
     this.time.delayedCall(120, () => {
       loading.destroy();
-      this.scene.start("IntroScene");
+      this.scene.start("NoticeScene");
     });
   }
 }

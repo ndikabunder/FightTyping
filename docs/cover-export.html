@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Fight Typing - Cover Export</title>
+<style>
+  * { margin: 0; padding: 0; }
+  body { background: #111; display: flex; flex-direction: column; align-items: center; padding: 24px; gap: 20px; }
+  img { max-width: 100%; height: auto; display: block; border: 1px solid #333; }
+  .row { display: flex; gap: 12px; align-items: center; }
+  button { padding: 10px 20px; font-size: 14px; cursor: pointer; background: #7cf7ff; border: none; font-weight: bold; border-radius: 4px; }
+  button:hover { background: #fff3b0; }
+  h3 { color: #7cf7ff; font-family: monospace; }
+  p { color: #aaa; font-family: monospace; font-size: 13px; }
+  canvas { display: none; }
+  .previews { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; }
+  .card { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+</style>
+</head>
+<body>
+  <h3>Fight Typing - Cover Export</h3>
+  <div class="previews">
+    <div class="card">
+      <p>1920x1080</p>
+      <img src="cover-1920x1080.svg" width="480"/>
+      <button onclick="exportPNG('cover-1920x1080.svg',1920,1080)">Download PNG</button>
+    </div>
+    <div class="card">
+      <p>800x1200</p>
+      <img src="cover-800x1200.svg" width="240"/>
+      <button onclick="exportPNG('cover-800x1200.svg',800,1200)">Download PNG</button>
+    </div>
+  </div>
+  <canvas id="canvas"></canvas>
+  <script>
+    function exportPNG(src, w, h) {
+      const canvas = document.getElementById('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      img.onload = function() {
+        ctx.clearRect(0,0,w,h);
+        ctx.drawImage(img, 0, 0, w, h);
+        const link = document.createElement('a');
+        link.download = src.replace('.svg','.png');
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      };
+      img.src = src;
+    }
+  </script>
+</body>
+</html>

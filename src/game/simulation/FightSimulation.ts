@@ -86,20 +86,8 @@ export class FightSimulation {
       return null;
     }
 
-    if (lower === "r" && (this.snapshot.roundState === "won" || this.snapshot.roundState === "lost")) {
-      this.restart();
-      return null;
-    }
-
-    if (lower === "n" && this.snapshot.roundState === "won") {
-      this.nextLevel();
-      return null;
-    }
-
-    if (lower === "`") {
-      this.toggleDebug();
-      return null;
-    }
+    // Debug toggle disabled in production to prevent accidental activation
+    // on non-US keyboard layouts where backtick position varies
 
     if (lower === "escape") {
       this.togglePause();
@@ -155,7 +143,7 @@ export class FightSimulation {
     if (result.completedPrompt?.kind === "attack") {
       this.snapshot = {
         ...this.snapshot,
-        prompts: this.promptSystem.replacePrompt(this.snapshot.prompts, result.completedPrompt.id, this.snapshot.level.wordPoolTier)
+        prompts: this.promptSystem.replacePrompt(this.snapshot.prompts, result.completedPrompt.id, this.snapshot.level.wordPoolTier, nowMs)
       };
     }
 
@@ -248,6 +236,7 @@ export class FightSimulation {
     }
 
     this.fightElapsedMs += deltaMs;
+    this.clearPromptCooldowns(nowMs);
     const enemyStartedAttack = this.updateEnemyPressure(deltaMs, nowMs);
 
     let player = this.combatSystem.updateFighter(this.snapshot.player, deltaMs);
@@ -637,6 +626,20 @@ export class FightSimulation {
     return { ...prompt, typed: "", status: "idle" };
   }
 
+  private clearPromptCooldowns(nowMs: number) {
+    let changed = false;
+    const prompts = this.snapshot.prompts.map((p) => {
+      if (p.status === "cooldown" && p.cooldownUntilMs && nowMs >= p.cooldownUntilMs) {
+        changed = true;
+        return { ...p, status: "idle" as const, cooldownUntilMs: undefined };
+      }
+      return p;
+    });
+    if (changed) {
+      this.snapshot = { ...this.snapshot, prompts };
+    }
+  }
+
   private interruptSkill(skill: GameSnapshot["skill"]) {
     if (!skill.available) {
       return skill;
@@ -771,7 +774,7 @@ export class FightSimulation {
       const label = enemy.hp <= 0 && !level.objectiveProgress.completed ? "Quest Failed" : player.hp <= 0 ? "Player KO" : "Defeat";
       return { kind: "ko", label, atMs: nowMs };
     }
-    return { kind: "hit", label: `${hit.damage}`, atMs: nowMs };
+    return { kind: "hit", label: "HIT", atMs: nowMs };
   }
 
   private updateMetricsForHit(metrics: GameSnapshot["metrics"], hit: HitEvent | null) {

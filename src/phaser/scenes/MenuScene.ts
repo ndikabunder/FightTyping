@@ -5,6 +5,7 @@ import { ensureBgm } from "../audio/GameAudio";
 
 export class MenuScene extends Phaser.Scene {
   private transitioning = false;
+  private readonly onWindowKey = (e: KeyboardEvent) => this.handleWindowKey(e);
 
   constructor() {
     super("MenuScene");
@@ -37,11 +38,11 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setShadow(0, 0, "#7cf7ff", 10, true, true);
 
-    this.menuButton(GAME_WIDTH / 2, 330, "START", () => this.startGameTransition());
-    this.menuButton(GAME_WIDTH / 2, 414, "LEADERBOARD", () => this.startLeaderboardTransition());
+    this.menuButton(GAME_WIDTH / 2, GAME_HEIGHT / 2, "START", () => this.startGameTransition());
     this.input.keyboard?.on("keydown-S", this.startGameTransition, this);
     this.input.keyboard?.on("keydown-ENTER", this.startGameTransition, this);
-    this.input.keyboard?.on("keydown-L", this.startLeaderboardTransition, this);
+    // Window-level fallback for iframe contexts where canvas may not have focus
+    window.addEventListener("keydown", this.onWindowKey);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.shutdown, this);
 
     this.add
@@ -117,21 +118,6 @@ export class MenuScene extends Phaser.Scene {
     });
   }
 
-  private startLeaderboardTransition() {
-    if (this.transitioning) {
-      return;
-    }
-
-    this.transitioning = true;
-    this.input.enabled = false;
-    this.tweens.add({ targets: this.children.list, alpha: 0.34, duration: 180, ease: "Cubic.easeOut" });
-    playSlashTransition(this, {
-      label: "LEADERBOARD",
-      accent: 0x7cf7ff,
-      onCovered: () => this.scene.start("LeaderboardScene")
-    });
-  }
-
   private createBackground() {
     const bg = this.add.graphics();
     bg.fillGradientStyle(0x06101a, 0x12091f, 0x060913, 0x210718, 1);
@@ -186,15 +172,23 @@ export class MenuScene extends Phaser.Scene {
     });
   }
 
+  private handleWindowKey(event: KeyboardEvent) {
+    if (event.repeat) return;
+    const key = event.key.toLowerCase();
+    if (key === "s" || key === "enter") {
+      this.startGameTransition();
+    }
+  }
+
   private shutdown() {
+    window.removeEventListener("keydown", this.onWindowKey);
     this.input.keyboard?.off("keydown-S", this.startGameTransition, this);
     this.input.keyboard?.off("keydown-ENTER", this.startGameTransition, this);
-    this.input.keyboard?.off("keydown-L", this.startLeaderboardTransition, this);
   }
 }
 
 function shortcutFor(label: string) {
-  return label === "START" ? "S / ENTER" : "L";
+  return label === "START" ? "S / ENTER" : "";
 }
 
 function drawButton(graphics: Phaser.GameObjects.Graphics, width: number, height: number, color: number, alpha: number) {

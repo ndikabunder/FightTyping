@@ -30,7 +30,7 @@ export class PromptSystem {
     });
   }
 
-  replacePrompt(prompts: PromptState[], promptId: string, tier: WordPoolTier = "level1"): PromptState[] {
+  replacePrompt(prompts: PromptState[], promptId: string, tier: WordPoolTier = "level1", nowMs = 0): PromptState[] {
     const used = prompts.filter((prompt) => prompt.id !== promptId).map((prompt) => prompt.text);
 
     return prompts.map((prompt) => {
@@ -45,7 +45,8 @@ export class PromptSystem {
         kind: "attack",
         text: this.pickPrompt(prompt.limb, used, tier),
         typed: "",
-        status: "idle"
+        status: "cooldown" as const,
+        cooldownUntilMs: nowMs + 2000
       };
     });
   }

@@ -94,6 +94,76 @@ export class HudController {
     this.root.hidden = hidden;
   }
 
+  /** Update only fast-changing elements (cooldown bar, HP, countdown, positions) without full DOM rebuild */
+  updateDynamic(snapshot: GameSnapshot) {
+    // Update prompt panel positions to follow fighter movement
+    this.root.querySelectorAll<HTMLElement>(".prompt-card:not(.dodge)").forEach((el) => {
+      const limb = (["leftHand", "rightHand", "leftLeg", "rightLeg"] as const).find((l) => el.classList.contains(l));
+      if (!limb) return;
+      const offset = promptOffsets[limb];
+      el.style.left = `${pct(snapshot.player.position.x + offset.x, LOGICAL_WIDTH)}%`;
+      el.style.top = `${pct(snapshot.player.position.y + offset.y, LOGICAL_HEIGHT)}%`;
+    });
+    const dodgeEl = this.root.querySelector<HTMLElement>(".prompt-card.dodge");
+    if (dodgeEl) {
+      dodgeEl.style.left = `${pct(snapshot.player.position.x, LOGICAL_WIDTH)}%`;
+      dodgeEl.style.top = `${pct(snapshot.player.position.y - 302, LOGICAL_HEIGHT)}%`;
+    }
+    const skillEl = this.root.querySelector<HTMLElement>(".skill-panel");
+    if (skillEl) {
+      skillEl.style.left = `${pct(snapshot.player.position.x, LOGICAL_WIDTH)}%`;
+      skillEl.style.top = `${pct(snapshot.player.position.y + 70, LOGICAL_HEIGHT)}%`;
+    }
+    const cooldownPos = this.root.querySelector<HTMLElement>(".enemy-cooldown");
+    if (cooldownPos) {
+      cooldownPos.style.left = `${pct(snapshot.enemy.position.x, LOGICAL_WIDTH)}%`;
+      cooldownPos.style.top = `${pct(snapshot.enemy.position.y - 302, LOGICAL_HEIGHT)}%`;
+    }
+    const enemySkillEl = this.root.querySelector<HTMLElement>(".enemy-skill-panel");
+    if (enemySkillEl) {
+      enemySkillEl.style.left = `${pct(snapshot.enemy.position.x, LOGICAL_WIDTH)}%`;
+      enemySkillEl.style.top = `${pct(snapshot.enemy.position.y + 70, LOGICAL_HEIGHT)}%`;
+    }
+
+    // Update enemy cooldown bar width and state class
+    const cooldownEl = this.root.querySelector<HTMLElement>(".enemy-cooldown");
+    if (cooldownEl) {
+      const pctValue = Math.max(0, Math.min(100, (snapshot.enemyAttackClockMs / snapshot.enemyAttackEveryMs) * 100));
+      const state = pctValue >= 82 ? "danger" : pctValue >= 58 ? "warning" : "safe";
+      cooldownEl.className = `enemy-cooldown ${state}`;
+      const bar = cooldownEl.querySelector<HTMLElement>("b");
+      if (bar) bar.style.width = `${pctValue}%`;
+      const cueEl = cooldownEl.querySelector<HTMLElement>("em");
+      if (cueEl) cueEl.textContent = state === "danger" ? "DODGE NOW" : state === "warning" ? "READY" : "WATCH";
+    }
+
+    // Update HP bars
+    const playerFill = this.root.querySelector<HTMLElement>(".hp-wrap.player .hp-fill");
+    if (playerFill) {
+      playerFill.style.width = `${Math.max(0, Math.min(100, (snapshot.player.hp / snapshot.player.maxHp) * 100))}%`;
+    }
+    const enemyFill = this.root.querySelector<HTMLElement>(".hp-wrap.enemy .hp-fill");
+    if (enemyFill) {
+      enemyFill.style.width = `${Math.max(0, Math.min(100, (snapshot.enemy.hp / snapshot.enemy.maxHp) * 100))}%`;
+    }
+
+    // Update enemy skill charge bar
+    const enemySkillFill = this.root.querySelector<HTMLElement>(".enemy-skill-panel b");
+    if (enemySkillFill && snapshot.enemySkill.available) {
+      const pctValue = Math.max(0, Math.min(100, (snapshot.enemySkill.clockMs / snapshot.enemySkill.cooldownMs) * 100));
+      enemySkillFill.style.width = `${pctValue}%`;
+    }
+
+    // Update countdown number
+    if (snapshot.roundState === "countdown") {
+      const countdownEl = this.root.querySelector<HTMLElement>(".briefing-countdown");
+      if (countdownEl) {
+        const value = Math.max(1, Math.ceil(snapshot.countdownMs / 600));
+        countdownEl.textContent = value === 1 ? "FIGHT" : `${value}`;
+      }
+    }
+  }
+
   destroy() {
     if (this.comboAnimationFrame !== null) {
       window.cancelAnimationFrame(this.comboAnimationFrame);
@@ -133,7 +203,7 @@ export class HudController {
               ${this.tutorialHint(snapshot.level.id)}
             </div>
           </div>
-          <div class="briefing-start-hint">Press SPACE to start</div>
+          <div class="briefing-start-hint">Press SPACE or tap to start</div>
         </div>
       `;
     }
@@ -188,10 +258,12 @@ export class HudController {
       .map((char, index) => `<span class="${index < typed ? "typed" : ""} ${index === typed - 1 ? "just-typed" : ""}">${char}</span>`)
       .join("");
     const wrongShake = this.isWrongTarget(snapshot, prompt.id) ? "wrong-shake" : "";
+    const cooldownBar = prompt.status === "cooldown" ? `<div class="cooldown-bar"></div>` : "";
     return `
       <div class="prompt-card ${prompt.limb} ${prompt.status} ${wrongShake}" data-typed="${typed}" style="left:${pct(pos.x, LOGICAL_WIDTH)}%;top:${pct(pos.y, LOGICAL_HEIGHT)}%">
         <small>${limbLabels[prompt.limb]}</small>
         <strong>${chars}</strong>
+        ${cooldownBar}
       </div>
     `;
   }
@@ -410,7 +482,6 @@ export class HudController {
     const key = event.key.toLowerCase();
     if (key === "escape") {
       event.preventDefault();
-      event.stopPropagation();
       this.onCommand("resume");
       return;
     }
@@ -491,7 +562,7 @@ export class HudController {
     const elapsedMs = performance.now() - this.comboAnimation.startedAtMs;
     const progress = Math.min(1, elapsedMs / this.comboAnimation.durationMs);
 
-    if (readout && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (readout) {
       const frame = comboPopFrame(progress);
       readout.style.opacity = String(frame.opacity);
       readout.style.transform = `scale(${frame.scale}) translateY(${frame.y}px)`;

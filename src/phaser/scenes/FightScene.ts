@@ -9,6 +9,9 @@ import { playSlashTransition } from "../fx/SceneTransitions";
 import { saveLeaderboardEntry } from "../../game/systems/LeaderboardStore";
 import { ensureBgm, playSfx, sfxForAttack } from "../audio/GameAudio";
 import type { GameSnapshot, HitEvent } from "../../game/types";
+import { gameplayStart, gameplayStop, showMidgameAd } from "../../game/systems/CrazySDK";
+import { trackEvent } from "../../analytics";
+import { gaProgressionStart, gaProgressionComplete, gaProgressionFail } from "../../gameAnalytics";
 
 export class FightScene extends Phaser.Scene {
   private simulation!: FightSimulation;
@@ -34,6 +37,8 @@ export class FightScene extends Phaser.Scene {
   private finalBlowRevealAtMs = 0;
   private finalBlowFx: Phaser.GameObjects.GameObject[] = [];
 
+  private readonly onWindowKeyDown = (e: KeyboardEvent) => this.onKeyDown(e);
+
   constructor() {
     super("FightScene");
   }
@@ -55,9 +60,14 @@ export class FightScene extends Phaser.Scene {
     this.hud = new HudController("hud-root", (command) => this.handleHudCommand(command));
     this.fx = this.add.graphics().setDepth(40);
 
-    this.input.keyboard?.on("keydown", this.onKeyDown, this);
+    // Use window-level listener to ensure keyboard works in iframe contexts
+    window.addEventListener("keydown", this.onWindowKeyDown);
+    // Allow tap/click to start from briefing (tablet with keyboard support)
+    this.input.on("pointerdown", this.onPointerDown, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.shutdown, this);
     this.renderAll(snapshot);
+    gameplayStart();
+    gaProgressionStart(snapshot.level.id);
   }
 
   update(_time: number, delta: number) {
@@ -80,7 +90,18 @@ export class FightScene extends Phaser.Scene {
   }
 
   private onKeyDown(event: KeyboardEvent) {
+    if (event.repeat || event.isComposing) {
+      return;
+    }
+
     if (event.key.toLowerCase() === "escape") {
+      return;
+    }
+
+    // Allow Space to start from briefing
+    if (event.key === " " && this.simulation.getSnapshot().roundState === "briefing") {
+      this.simulation.handleKey(" ", this.time.now);
+      this.renderAll(this.simulation.getSnapshot());
       return;
     }
 
@@ -97,6 +118,13 @@ export class FightScene extends Phaser.Scene {
     this.renderAll(snapshot);
     this.playEnemyEvadeFx(snapshot);
     this.playFeedbackSfx(snapshot);
+  }
+
+  private onPointerDown() {
+    if (this.simulation.getSnapshot().roundState === "briefing") {
+      this.simulation.handleKey(" ", this.time.now);
+      this.renderAll(this.simulation.getSnapshot());
+    }
   }
 
   private handleHudCommand(command: "retry" | "next" | "menu" | "resume") {
@@ -128,9 +156,12 @@ export class FightScene extends Phaser.Scene {
     this.transitionLevel(command);
   }
 
-  private transitionLevel(command: "retry" | "next") {
+  private async transitionLevel(command: "retry" | "next") {
     this.transitioning = true;
     this.input.enabled = false;
+
+    await showMidgameAd();
+
     const label = command === "next" ? "NEXT LEVEL" : "RETRY";
 
     playSlashTransition(this, {
@@ -150,6 +181,7 @@ export class FightScene extends Phaser.Scene {
         this.lastEnemyVisualSerial = 0;
         this.lastEnemyDodgeAt = -1;
         this.resetFinalBlowFx();
+        gaProgressionStart(this.simulation.getSnapshot().level.id);
         this.input.enabled = true;
         this.transitioning = false;
         this.renderAll(this.simulation.getSnapshot());
@@ -172,6 +204,8 @@ export class FightScene extends Phaser.Scene {
     if (hudHash !== this.lastHudHash) {
       this.hud.render(snapshot, { suppressResult: this.pendingResultReveal });
       this.lastHudHash = hudHash;
+    } else {
+      this.hud.updateDynamic(snapshot);
     }
   }
 
@@ -422,6 +456,22 @@ export class FightScene extends Phaser.Scene {
     this.lastSavedRoundState = snapshot.roundState;
     playSfx(this, snapshot.roundState === "won" ? "victory" : "defeat", 0.86);
 
+    trackEvent("round_end", {
+      level: snapshot.level.id,
+      result: snapshot.roundState,
+      accuracy: accuracy(snapshot),
+      time_ms: Math.max(0, this.time.now - this.runStartedAtMs),
+      player_hp: snapshot.player.hp,
+      enemy_hp: snapshot.enemy.hp,
+      combo_best: snapshot.combo.best
+    });
+
+    if (snapshot.roundState === "won") {
+      gaProgressionComplete(snapshot.level.id, snapshot.level.score);
+    } else {
+      gaProgressionFail(snapshot.level.id, snapshot.level.score);
+    }
+
     if (snapshot.roundState === "won") {
       this.bestCompletedLevel = Math.max(this.bestCompletedLevel, snapshot.level.id);
     }
@@ -436,8 +486,10 @@ export class FightScene extends Phaser.Scene {
   }
 
   private shutdown() {
+    gameplayStop();
     this.clearFinalBlowOverlay();
-    this.input.keyboard?.off("keydown", this.onKeyDown, this);
+    window.removeEventListener("keydown", this.onWindowKeyDown);
+    this.input.off("pointerdown", this.onPointerDown, this);
     this.playerRenderer?.destroy();
     this.enemyRenderer?.destroy();
     this.debugRenderer?.destroy();
@@ -456,25 +508,10 @@ function accuracy(snapshot: GameSnapshot) {
 }
 
 function createHudHash(snapshot: GameSnapshot) {
-  return JSON.stringify({
-    prompts: snapshot.prompts,
-    metrics: snapshot.metrics,
-    combo: snapshot.combo,
-    skill: snapshot.skill,
-    enemySkill: snapshot.enemySkill,
-    hp: [snapshot.player.hp, snapshot.enemy.hp],
-    state: snapshot.roundState,
-    countdown: Math.ceil(snapshot.countdownMs / 200),
-    enemyTelegraph: Math.ceil(snapshot.enemyTelegraphMs / 200),
-    enemyCooldown: Math.floor(snapshot.enemyAttackClockMs / 50),
-    incoming: snapshot.enemyIncomingAttackId,
-    debug: snapshot.debugEnabled,
-    level: snapshot.level,
-    feedback: snapshot.feedback,
-    playerState: snapshot.player.state,
-    enemyState: snapshot.enemy.state,
-    lastHit: snapshot.lastHit?.atMs
-  });
+  // Only include values that require DOM structure changes (new/removed elements).
+  // Fast-changing numeric values (cooldown bars, HP) are handled by updateDynamic().
+  const p = snapshot.prompts;
+  return `${snapshot.roundState}|${snapshot.level.id}|${snapshot.player.hp}|${snapshot.enemy.hp}|${p.length}|${p.map((pr) => pr.id + pr.typed.length + pr.status).join(",")}|${snapshot.dodgePrompt?.typed.length ?? ""}|${snapshot.dodgePrompt?.status ?? ""}|${snapshot.combo.count}|${snapshot.combo.serial}|${snapshot.skill.status}|${snapshot.skill.unlocked}|${snapshot.skill.usedSerial}|${snapshot.enemySkill.available}|${snapshot.enemySkill.active}|${snapshot.enemySkill.usedSerial}|${snapshot.enemyIncomingAttackId ?? ""}|${snapshot.feedback?.atMs ?? 0}|${snapshot.level.objectiveProgress.current}|${snapshot.level.objectiveProgress.completed}|${snapshot.level.score}|${snapshot.lastHit?.atMs ?? 0}`;
 }
 
 function arenaColors(theme: string) {

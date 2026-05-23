@@ -2,9 +2,9 @@ import Phaser from "phaser";
 import { BootScene } from "./scenes/BootScene";
 import { PreloadScene } from "./scenes/PreloadScene";
 import { FightScene } from "./scenes/FightScene";
+import { NoticeScene } from "./scenes/NoticeScene";
 import { IntroScene } from "./scenes/IntroScene";
 import { MenuScene } from "./scenes/MenuScene";
-import { LeaderboardScene } from "./scenes/LeaderboardScene";
 
 export const GAME_WIDTH = 1280;
 export const GAME_HEIGHT = 720;
@@ -24,7 +24,7 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
   },
   fps: {
     target: 60,
-    limit: 0,
+    limit: 60,
     smoothStep: true
   },
   input: {
@@ -35,5 +35,5 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
     activePointers: 1,
     windowEvents: true
   },
-  scene: [BootScene, PreloadScene, IntroScene, MenuScene, LeaderboardScene, FightScene]
+  scene: [BootScene, PreloadScene, NoticeScene, IntroScene, MenuScene, FightScene]
 };
